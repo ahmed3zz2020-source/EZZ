@@ -178,8 +178,8 @@ def build_plan(rows, ledger, eq, detail_by_code):
             continue
         if n_open >= POLICY["max_positions"]:
             continue
-        # ⛔ ٣ أوامر كحد أقصى في الرسالة الواحدة — والباقي يروح قائمة الرادار
-        if len(plan["entries"]) >= 3:
+        # ⛔ ٤ أوامر كحد أقصى في الرسالة الواحدة — والباقي يروح قائمة الرادار
+        if len(plan["entries"]) >= 4:
             continue
         if open_risk >= POLICY["open_risk_max_pct"]:
             continue
