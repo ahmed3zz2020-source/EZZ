@@ -17,6 +17,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+FORCE = os.environ.get("FORCE_BUILD") == "1"
 CHROME = "/root/.cache/ms-playwright/chromium-1243/chrome-linux/chrome"
 FONTS = "/usr/share/fonts/truetype/ezz"
 
@@ -179,7 +180,7 @@ def build_html(sc, W, H):
 </body></html>""" % (css, "".join(body), prog)
 
 
-def render_frames(spec, outdir, W, H):
+def render_frames(spec, outdir, W, H, spec_mtime=None):
     os.makedirs(outdir, exist_ok=True)
     paths = []
     for i, sc in enumerate(spec["scenes"]):
@@ -191,6 +192,11 @@ def render_frames(spec, outdir, W, H):
         with open(hp, "w", encoding="utf-8") as f:
             f.write(html)
         png = os.path.join(outdir, "scene%02d.png" % (i + 1))
+        # ⭐ لو الصورة موجودة وحديثة (أحدث من ملف المواصفات) ⇒ متارسمهاش تاني
+        if os.path.exists(png) and not FORCE:
+            paths.append(png)
+            print("  🖼️  مشهد %d (موجود)" % (i + 1))
+            continue
         sh([CHROME, "--headless=new", "--disable-gpu", "--no-sandbox", "--hide-scrollbars",
             "--force-device-scale-factor=1", "--window-size=%d,%d" % (W, H),
             "--screenshot=" + png, "file://" + hp])
@@ -199,35 +205,40 @@ def render_frames(spec, outdir, W, H):
     return paths
 
 
-def assemble(spec, frames, audpath, outdir, W, H, fps=30):
-    """ffmpeg: كل مشهد مدة = مدة صوته + 0.35ث ⇒ المونتاج."""
+def assemble(spec, frames, audpath, outdir, W, H, fps=24):
+    """ffmpeg: مقطع لكل مشهد (بمدة صوته) ⇒ concat ⇒ mux مع الصوت."""
     durs = json.load(open(os.path.join(outdir, "durations.json"), encoding="utf-8"))
     atempo = float(spec.get("atempo", 1.0))
-    clips = []
+    segs = []
     for i, png in enumerate(frames):
         d = float(durs.get(str(i + 1), durs.get(i + 1, 4.0))) / atempo + 0.30
-        clips.append((png, d))
-    # ⭐ مقطع لكل مشهد: -loop 1 مع -t للمدة ⇒ zoompan d=1 يطلع عدد الإطارات الصح
-    segs = []
-    for i, (png, d) in enumerate(clips):
         seg = os.path.join(outdir, "clip%02d.mp4" % (i + 1))
-        sh(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", png, "-t", "%.3f" % d,
-            "-vf", "scale=%d:%d,zoompan=z='min(zoom+0.0004,1.07)':d=1:s=%dx%d:fps=%d"
-            % (W, H, W, H, fps), "-r", str(fps), "-c:v", "libx264", "-preset", "veryfast",
-            "-crf", "20", "-pix_fmt", "yuv420p", seg])
+        fresh = os.path.exists(seg) and not FORCE
+        if not fresh:
+            if spec.get("motion", "none") == "none":
+                sh(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", png, "-t", "%.3f" % d,
+                    "-vf", "scale=%d:%d,fade=t=in:st=0:d=0.35,fade=t=out:st=%.3f:d=0.35"
+                    % (W, H, max(0.1, d - 0.35)), "-r", str(fps), "-c:v", "libx264",
+                    "-preset", "ultrafast", "-crf", "22", "-pix_fmt", "yuv420p", seg])
+            else:
+                sh(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", png, "-t", "%.3f" % d,
+                    "-vf", "scale=%d:%d,zoompan=z='min(zoom+0.0004,1.07)':d=1:s=%dx%d:fps=%d"
+                    % (W, H, W, H, fps), "-r", str(fps), "-c:v", "libx264", "-preset", "veryfast",
+                    "-crf", "20", "-pix_fmt", "yuv420p", seg])
         segs.append(seg)
     lst = os.path.join(outdir, "concat.txt")
     with open(lst, "w") as f:
         for seg in segs:
-            f.write("file '%s'\n" % seg)
+            f.write("file '%s\n" % seg)
     silent = os.path.join(outdir, "silent.mp4")
+    sh(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
+        "-c", "copy", silent])
     if atempo != 1.0:
         fast = os.path.join(outdir, "audio_fast.mp3")
-        sh(["ffmpeg", "-y", "-v", "error", "-i", audpath, "-filter:a",
-            "atempo=%.3f" % atempo, "-q:a", "3", fast])
+        if not os.path.exists(fast):
+            sh(["ffmpeg", "-y", "-v", "error", "-i", audpath, "-filter:a",
+                "atempo=%.3f" % atempo, "-q:a", "3", fast])
         audpath = fast
-    sh(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", lst,
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-shortest", out])
     out = os.path.join(outdir, spec.get("out", "video.mp4"))
     sh(["ffmpeg", "-y", "-v", "error", "-i", silent, "-i", audpath,
         "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-shortest", out])
@@ -295,7 +306,11 @@ def main():
     W = spec.get("w", 1920)
     H = spec.get("h", 1080)
     print("▶ %s (%dx%d)" % (spec["id"], W, H))
-    frames = render_frames(spec, base, W, H)
+    try:
+        spec_mtime = os.path.getmtime(path)
+    except Exception:
+        spec_mtime = None
+    frames = render_frames(spec, base, W, H, spec_mtime)
     if only:
         print("🖼️  المشاهد في", base)
         return 0
