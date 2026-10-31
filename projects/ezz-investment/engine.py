@@ -588,6 +588,10 @@ def main():
 
     # الأوامر ⇒ سجل (بانتظار موافقة المالك)
     if not dry:
+        # ⛔ الخطة الجديدة تلغي الأوامر المقترحة القديمة (ما لمستش approved/filled)
+        gone = ledger.clear_recommended()
+        if gone:
+            print("🧹 اتشالت %d أمر مقترح قديم: %s" % (len(gone), ", ".join(gone)))
         stamp = time.strftime("%H%M%S")
         for e in plan["entries"]:
             oid = "BUY-%s-%s" % (e["code"], stamp)

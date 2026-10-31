@@ -229,6 +229,15 @@ class Ledger:
         self.data.setdefault("orders", {})[oid] = o
         return o
 
+    def clear_recommended(self):
+        """🧹 شيل الأوامر المقترحة القديمة — الخطة الجديدة بتلغيها.
+        ⛔ ما بنمسحش ولا approved ولا filled (دي تاريخ حقيقي)."""
+        orders = self.data.get("orders") or {}
+        gone = [k for k, v in orders.items() if v.get("status") == "recommended"]
+        for k in gone:
+            orders.pop(k, None)
+        return gone
+
     def approve(self, oid):
         o = self.data["orders"].get(oid)
         if o:
