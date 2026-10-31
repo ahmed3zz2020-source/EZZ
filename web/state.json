@@ -1,0 +1,56 @@
+{
+  "phase": "2 — بناء الإدارة التنفيذية",
+  "updated": "2026-10-31",
+  "agents_defined": 12,
+  "agents_active": 4,
+  "agents_active_list": [
+    "EZZ-Opportunity",
+    "EZZ-Audit",
+    "EZZ-Brief",
+    "Mavis (EZZ-CEO)"
+  ],
+  "open_decisions": [
+    {
+      "id": "D-0003",
+      "title": "توكن بوت تيليجرام الجديد للمكتب",
+      "status": "pending"
+    },
+    {
+      "id": "D-0004",
+      "title": "حدود الإذن: إرسال باسم المالك أم تجهيز فقط",
+      "status": "pending"
+    },
+    {
+      "id": "D-0005",
+      "title": "أولوية منصات السوشيال في المرحلة ٣",
+      "status": "pending"
+    }
+  ],
+  "resolved_decisions": [
+    "D-0001",
+    "D-0002"
+  ],
+  "opportunities_count": 6,
+  "top_opportunity": "بيع خدمة رقمية عربية عبر سوق الخدمات — صافي 80٪ من سعر الخدمة",
+  "tasks_open": 1,
+  "tasks_blocked": 3,
+  "gold_bot": {
+    "schedule": "hourly watchdog + Saturday 12:00 weekly maintenance",
+    "cost_per_day_k": "~276k (was ~2.4M)",
+    "kv_writes_per_day": "~85 (was 800+)",
+    "warm": false,
+    "m15": 9,
+    "needed_for_warm": 40,
+    "engine_alive": true
+  },
+  "quality_gate": {
+    "radar_requires_audit": true,
+    "first_audit": {
+      "date": "2026-10-31",
+      "errors": 18,
+      "core": 10,
+      "fixed": 18
+    }
+  },
+  "mirror_note": "نسخة مُحدَّثة من Cloudflare KV بواسطة EZZ-Brief — المصدر: core/state.json"
+}
