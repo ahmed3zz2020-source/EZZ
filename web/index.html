@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>عِز — EZZ · مركز القيادة</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:#0b1220;color:#e6edf7;font-family:system-ui,"Segoe UI",sans-serif}
+header{margin-bottom:16px}
+h1{margin:0;font-size:24px;letter-spacing:.5px}
+.sub{color:#8b9ab5;font-size:13px;margin-top:4px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.card{background:#131c2e;border:1px solid #24304a;border-radius:12px;padding:13px}
+.k{color:#8b9ab5;font-size:12px}
+.v{font-size:19px;font-weight:700;margin-top:5px;line-height:1.35}
+.ok{color:#3fb950}.no{color:#d29922}.hi{color:#58a6ff}
+section{margin-top:18px}
+h2{font-size:15px;color:#c9d5ec;margin:0 0 8px;font-weight:600}
+ul{margin:0;padding-right:18px}li{margin:3px 0;font-size:13px;color:#c9d5ec}
+a{color:#58a6ff}
+footer{margin-top:22px;color:#6b7a94;font-size:12px}
+</style></head>
+<body>
+<header><h1>عِز — EZZ</h1><div class="sub">مركز القيادة · One Vision. One Organization. Intelligent Execution.</div></header>
+<div class="grid" id="g"><div class="card"><div class="k">الحالة</div><div class="v">جاري التحميل…</div></div></div>
+<section><h2>قرارات تنتظر موافقة المالك</h2><ul id="dec">—</ul></section>
+<section><h2>الوكلاء النشطون</h2><ul id="ag">—</ul></section>
+<section><h2>بوت الذهب</h2><ul id="gb">—</ul></section>
+<footer id="ft"></footer>
+<script>
+const S='https://raw.githubusercontent.com/ahmed3zz2020-source/EZZ/main/web/state.json';
+fetch(S,{cache:'no-store'}).then(r=>r.json()).then(d=>{
+ const gb=d.gold_bot||{};
+ const cards=[
+  ['المرحلة',d.phase||'—','hi'],
+  ['وكلاء نشطون',(d.agents_active||0)+' / '+(d.agents_defined||'—'),''],
+  ['فرص مسجّلة',d.opportunities_count||'—',''],
+  ['مهام مفتوحة',(d.tasks_open||0),''],
+  ['بانتظار المالك',(d.tasks_blocked||0),'no'],
+  ['قرارات مفتوحة',(d.open_decisions||[]).length,'no'],
+  ['بوت الذهب',gb.warm?'دافي':'مش دافي',gb.warm?'ok':'no'],
+  ['m15',gb.m15!==undefined?gb.m15+' / '+(gb.needed_for_warm||40):'—','']
+ ];
+ document.getElementById('g').innerHTML=cards.map(c=>`<div class="card"><div class="k">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div></div>`).join('');
+ document.getElementById('dec').innerHTML=(d.open_decisions||[]).map(x=>`<li>${x.id} — ${x.title}</li>`).join('')||'<li>لا توجد</li>';
+ document.getElementById('ag').innerHTML=(d.agents_active_list||[]).map(x=>`<li>${x}</li>`).join('')||'<li>—</li>';
+ document.getElementById('gb').innerHTML=`<li>الجدول: ${gb.schedule||'—'}</li><li>التكلفة/يوم: ${gb.cost_per_day_k||'—'}</li><li>كتابات KV/يوم: ${gb.kv_writes_per_day||'—'}</li><li>المحرك: ${gb.engine_alive?'حي':'ميت'}</li>`;
+ document.getElementById('ft').textContent='آخر تحديث للبيانات: '+(d.updated||'—')+' · المصدر: مستودع EZZ (عام) · '+new Date().toLocaleString('ar-EG');
+}).catch(()=>{document.getElementById('g').innerHTML='<div class="card"><div class="v no">تعذّر تحميل الحالة</div></div>';});
+</script></body></html>
