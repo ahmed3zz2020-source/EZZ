@@ -42,6 +42,11 @@ Cloudflare KV (core/) · Telegram (عامل الإرسال) · GitHub (EZZ)
 ## ملاحظات (append-only)
 - 2026-10-31 — أول تشغيل: مفتاح core/inbox مش موجود (key not found) والـwebhook رجّع 503 مع pending_update_count=2 ⇒ اتقريت رسالتين من getUpdates بالاحتياطي المُعتمد: /start (update 557159658) و«مساء ورد يا عز اخبارك ايه» (update 557159659). اتبعت ردّين (message_id 5 و6)، واتأكد الـoffset (557159660) عشان مفيش رد مكرر، ورجّع الـwebhook (pending_update_count=0). ⛔ كل كتابة KV رجّعت 10048 ⇒ core/inbox وcore/tasks.json ما اتكتبوش.
 - 2026-10-31 — مرآة الـinbox (لأن KV مش قابل للكتابة دلوقتي): الرسالة ١: update 557159658 · chat 2073907990 · kind=text · text: /start · handled=true · رد: «أهلاً يا أحمد…» (message_id 5). الرسالة ٢: update 557159659 · chat 2073907990 · kind=text · text: «مساء ورد يا عز اخبارك ايه .» · handled=true · رد: «مساء النور يا أحمد…» (message_id 6).
+- 2026-10-31 — التشغيل الثاني: مفتاح core/inbox لسه مش موجود (key not found) والـwebhook رجّع 503 (كتابة KV فشلت) مع pending_update_count=1 ⇒ اتقرت الرسالة(update 557159660 · chat 2073907990 · kind=text) من getUpdates بالاحتياطي المُعتمد، اتعالجت والرد اتبعت (message_id 8)، ورجّع الـwebhook بـsecret_token من core/gate_secret. ⛔ كل كتابة KV رجّعت 10048 ⇒ core/inbox وcore/tasks.json ما اتكتبوش.
+
+## مرآة الـinbox (لأن KV مش قابل للكتابة دلوقتي)
+- الرسالة ٣: update 557159660 · chat 2073907990 · kind=text · text: «عاوزين نبدأ في اول فتح حساب ل سوشيل ميديا راك نبدا ب ايه اول حاجهة . وهل انت مجهز محتوى عشان ما نعملش صفحه نبدا بنحمي .» · handled=true · رد: «أحمد: نبدأ بالترتيب المعتمد…» (message_id 8).
 
 ## مهام معلّقة (مرآة core/tasks.json)
 - T-0008 · owner · P0 · open — استعادة سعة كتابة Cloudflare KV (سقف 1000/يوم) بعد ما البوابة استنزفت السقف بمحاولات فاشلة. ⛔ الكتابة في core/tasks.json رجّعت 10048 ⇒ متسجّلة هنا مؤقتاً لحد ما السقف يتجدّد.
+- T-0009 · ezz-social-launch · P0 · open — تجهيز حزمة محتوى قناة يوتيوب قبل فتح الحساب: وصف لكل منصة + هوية بصرية + شعارات وأغلفة + قوالب نشر + خطة محتوى 30 يوم + خام محتوى من مشروع OCTA. ⛔ الكتابة في core/tasks.json رجّعت 10048 ⇒ متسجّلة هنا مؤقتاً.
