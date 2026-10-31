@@ -39,6 +39,7 @@ Cloudflare KV (core/) · Telegram (عامل الإرسال) · GitHub (EZZ)
 |---|---|---|---|---|---|
 | 2026-10-31 | كل كتابة KV رجّعت 10048 (free usage limit for this operation) ⇒ ezz-gate رجّع 503 ⇒ رسايل المالك ما وصلتش لـcore/inbox | حرجة | سقف 1000 كتابة/يوم على مستوى الحساب اتنفد | الاحتياطي المُعتمد: deleteWebhook + getUpdates + setWebhook · الرد اتبعت · مرآة معالجة في هذا الملف | محتمل |
 
+| 2026-10-31 | إرسال الرد بـpython-urllib رجّع 403 من عامل الإرسال (سلوك حافة network مش خطأ في العامل) | متوسطة | User-Agent الافتراضي لpython-urllib | الإرسال بـcurl مع User-Agent عادي ⇒ اتبعت بنجاح (message_id 8) | اتكرر؟ لا |
 ## ملاحظات (append-only)
 - 2026-10-31 — أول تشغيل: مفتاح core/inbox مش موجود (key not found) والـwebhook رجّع 503 مع pending_update_count=2 ⇒ اتقريت رسالتين من getUpdates بالاحتياطي المُعتمد: /start (update 557159658) و«مساء ورد يا عز اخبارك ايه» (update 557159659). اتبعت ردّين (message_id 5 و6)، واتأكد الـoffset (557159660) عشان مفيش رد مكرر، ورجّع الـwebhook (pending_update_count=0). ⛔ كل كتابة KV رجّعت 10048 ⇒ core/inbox وcore/tasks.json ما اتكتبوش.
 - 2026-10-31 — مرآة الـinbox (لأن KV مش قابل للكتابة دلوقتي): الرسالة ١: update 557159658 · chat 2073907990 · kind=text · text: /start · handled=true · رد: «أهلاً يا أحمد…» (message_id 5). الرسالة ٢: update 557159659 · chat 2073907990 · kind=text · text: «مساء ورد يا عز اخبارك ايه .» · handled=true · رد: «مساء النور يا أحمد…» (message_id 6).
