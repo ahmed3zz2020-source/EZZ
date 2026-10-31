@@ -67,7 +67,7 @@
 | ⛔ **Cloudflare R2** | نفس السبب | Drive (خاص) للمخرجات |
 | ⛔ **Railway deploy** | التوكن project-scoped بدون mutations | push على `main` (deploy تلقائي عند عودة Railway) |
 | ⛔ **WhatsApp رسمي** | مفيش connector رسمي في الكتالوج (١٥ أداة: media + email فقط) | Telegram + بريد + Command Center — وتوثيق قيود WhatsApp في التقرير |
-| ⛔ **تشغيل و��لاء متزامن حقيقي** | cron session = حاوية منفصلة لكل جلسة | ⛔ محاكاة منظمة متعددة الأدوار (منظَّم فيCouncil) + بيان طبيعة التنفيذ |
+| ⛔ **تشغيل وكلاء متزامن حقيقي** | cron session = حاوية منفصلة لكل جلسة | ⛔ محاكاة منظمة متعددة الأدوار (منظَّم فيCouncil) + بيان طبيعة التنفيذ |
 | ⛔ **خادم دائم بين الجلسات** | cron container يُستبدل | عملية داخل جلسة طويلة + `/opt` (مُقيس: nohup عاش ٤٠+ ثانية) |
 | ⛔ **CI على GitHub Actions** | التوكن بلا scope `workflow` | `ezz-mem.py doctor` كـgate محلي + فحص قبل push |
 
