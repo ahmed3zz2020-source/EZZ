@@ -57,6 +57,61 @@ def _mean(parts):
     return sum(parts) / len(parts), len(parts)
 
 
+# ────────────────────── الدمج مع المصدر الطازج ──────────────────────
+# ⭐ خريطة الأسماء: الطبقة الطازجة (egx_full) بتستخدم أسماء مختصرة.
+FRESH_MAP = {
+    "pe": "pe", "pb": "pb", "roe": "roe", "beta": "beta",
+    "div_yield": "s_dy", "gross_margin": "s_gm", "roa": "s_roa",
+    "mkt_cap": "mc", "cagr3y": "cagr3y", "from_52hi": "frm52hi",
+    "max_dd": "mdd", "max_dd_1y": "mdd1y", "high_52": "h52", "low_52": "l52",
+    "ma50_fresh": "s_ma50", "ma200_fresh": "s_ma200", "float_shares": "s_flt",
+}
+
+
+def merge_fresh(universe, fresh):
+    """🔗 ادمج الطبقة الطازجة في الكون: يملأ الناقص ويضيف حقول جديدة.
+    ⛔ ما بيكتبش ولا بيمسحش قيمة موجودة — بيملاّ الناقص بس."""
+    if not fresh:
+        return universe, {"filled": {}, "added": {}}
+    stats = {"filled": {}, "added": {}}
+    for s in universe:
+        c = s.get("code")
+        f = fresh.get(c) if isinstance(fresh, dict) else None
+        if not f:
+            continue
+        for dst, src in FRESH_MAP.items():
+            v = f.get(src)
+            if v in (None, "", 0) and src not in ("cagr3y",):
+                continue
+            if dst not in s or s.get(dst) in (None, ""):
+                s[dst] = v
+                stats["filled"].setdefault(dst, 0)
+                stats["filled"][dst] += 1
+    return universe, stats
+
+
+def sector_medians(universe):
+    """🏭 متوسطات القطاع من الكون المدمج (P/E · P/B) — أدق من متوسط عام."""
+    out = {}
+    for s in universe:
+        sec = s.get("sector")
+        if not sec:
+            continue
+        d = out.setdefault(sec, {"pe": [], "pb": [], "count": 0})
+        d["count"] += 1
+        for k in ("pe", "pb"):
+            v = num(s.get(k))
+            if v and v > 0:
+                d[k].append(v)
+    for sec, d in out.items():
+        for k in ("pe", "pb"):
+            vals = sorted(d[k])
+            if vals:
+                n = len(vals)
+                d["median_" + k] = vals[n // 2] if n % 2 else (vals[n // 2 - 1] + vals[n // 2]) / 2.0
+    return out
+
+
 # ─────────────────────────── العوامل ───────────────────────────
 def momentum(s):
     """📈 زخم مستقل: أداء متعدد الفترات + موقع السعر من المتوسطات + RSI."""
@@ -77,6 +132,11 @@ def momentum(s):
         parts.append(100.0 * len(above) / len(above))
         detail["above_emas"] = "%d/3" % len(above)
 
+    f52 = num(s.get("from_52hi"))
+    if f52 is not None:
+        # ⭐ المسافة من القمة السنوية: قريب من القمة = زخم، بعيد = تعافي
+        parts.append(scale(f52, -45, -2))
+        detail["from_52hi"] = f52
     rsi = num(s.get("rsi"))
     if rsi is not None:
         if rsi < 30:
@@ -123,6 +183,14 @@ def quality(s):
     if dy is not None:
         parts.append(scale(dy, 0, 8))
         detail["div_yield"] = dy
+    roa = num(s.get("roa"))
+    if roa is not None:
+        parts.append(scale(roa, 0, 25))
+        detail["roa"] = roa
+    gm = num(s.get("gross_margin"))
+    if gm is not None:
+        parts.append(scale(gm, 2, 55))
+        detail["gross_margin"] = gm
     v, n = _mean(parts)
     if v is None:
         return None, notes + ["مفيش بيانات جودة"], detail
@@ -198,6 +266,11 @@ def risk(s):
         detail["risk_level"] = lvl
     else:
         notes.append("مفيش مستوى مخاطرة")
+    mdd1 = num(s.get("max_dd_1y"))
+    if mdd1 is not None:
+        # ⭐ أقصى هبوط في سنة ⇒ مخاطرة حقيقية (مش مخاطرة نظرية)
+        parts.append(scale(mdd1, 90, 12))
+        detail["max_dd_1y"] = mdd1
     v, n = _mean(parts)
     if v is None:
         return None, notes + ["مفيش بيانات مخاطرة"], detail
@@ -223,6 +296,16 @@ def catalyst(s, divs_by_code):
     return v, notes, detail
 
 
+def growth(s):
+    """🌱 نمو مستقل: مركّب Earnings ٣ سنوات (CAGR) + قوة النمو السنوي."""
+    cagr = num(s.get("cagr3y"))
+    if cagr is None:
+        return None, ["مفيش CAGR"], {}
+    # ⭐ CAGR سالب = свинц ⇒ صفر. ٠–٢٠ = ضعيف · ٢٠–٥٠ = كويس · فوق ٥٠ = ممتاز
+    v = scale(cagr, -10, 60)
+    return v, [], {"cagr3y": cagr}
+
+
 # ─────────────────────── التقييم والإشارات ───────────────────────
 def evaluate(universe, sector_stats=None, divs=None):
     """🧮 تقييم كل سهم بالعوامل الستة + تغطية البيانات."""
@@ -244,15 +327,17 @@ def evaluate(universe, sector_stats=None, divs=None):
         f_liq, n4, d4 = liquidity(s)
         f_risk, n5, d5 = risk(s)
         f_cat, n6, d6 = catalyst(s, divs_by)
+        f_gro, n7, d7 = growth(s)
 
         factors = {"momentum": f_mom, "quality": f_qual, "value": f_val,
-                   "liquidity": f_liq, "risk": f_risk, "catalyst": f_cat}
+                   "liquidity": f_liq, "risk": f_risk, "catalyst": f_cat,
+                   "growth": f_gro}
         got = {k: v for k, v in factors.items() if v is not None}
         weights = {k: FACTOR_WEIGHTS[k] for k in got}
         tw = sum(weights.values())
         my = sum(factors[k] * weights[k] for k in got) / tw if tw else None
 
-        notes = list(n1) + list(n2) + list(n3) + list(n4) + list(n5) + list(n6)
+        notes = list(n1) + list(n2) + list(n3) + list(n4) + list(n5) + list(n6) + list(n7)
         coverage = len(got) / float(len(FACTOR_WEIGHTS))
         rows.append({
             "code": code, "name": s.get("name"), "sector": s.get("sector"),
@@ -260,7 +345,7 @@ def evaluate(universe, sector_stats=None, divs=None):
             "my_score": round(my, 1) if my is not None else None,
             "factors": {k: (round(v, 1) if v is not None else None) for k, v in factors.items()},
             "detail": {"momentum": d1, "quality": d2, "value": d3,
-                       "liquidity": d4, "risk": d5, "catalyst": d6},
+                       "liquidity": d4, "risk": d5, "catalyst": d6, "growth": d7},
             "coverage": round(coverage, 2),
             "missing": [k for k, v in factors.items() if v is None],
             "octa_axes": s.get("all_axes") or {},

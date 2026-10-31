@@ -97,6 +97,11 @@ class OctaAdapter:
         d = self._http("/api/stocks", auth=True)
         return d.get("egx30") or [], d.get("snapshot_id")
 
+    def egx_full(self):
+        """🌱 طبقة الأساسيات الطازجة (TradingView + StartMarkets) — بتتحدّث يومياً.
+        ⭐ فيها حقول مش موجودة في الكون: pe · roe · cagr3y · frm52hi · mdd · s_ma50/200 · h52/l52."""
+        return self._http("/api/egx_full", auth=True)
+
     def indices(self):
         """📈 المؤشرات الرسمية (٤) + قيمها + حالة السوق."""
         return self._http("/api/indices")

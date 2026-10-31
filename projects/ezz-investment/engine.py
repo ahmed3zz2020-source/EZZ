@@ -29,7 +29,7 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from adapter.intelligence import (detect_conflicts, divergence, evaluate, gate,  # noqa: E402
-                                  regime)
+                                  merge_fresh, regime, sector_medians)
 from adapter.ledger import KV, Journal, Ledger  # noqa: E402
 from adapter.octa import OctaAdapter  # noqa: E402
 from adapter.validation import crosscheck, freshness  # noqa: E402
@@ -152,6 +152,15 @@ def build_plan(rows, ledger, eq, detail_by_code):
                                   "qty": pos.get("qty")})
 
     # ── الدخول ──
+    # ⭐ كسر التعادل: لو فيه أكتر من مرشّح قريب من القمة ⇒ الأعلى سيولة يتقدّم.
+    #   السبب: في محفظة ١٠٠ ألف،中心和 نقدر نخرج منه أهم من نقاط زيادة.
+    scored = [r for r in rows if r.get("my_score") is not None]
+    if scored:
+        top = max(r["my_score"] for r in scored)
+        tier = [r for r in scored if r["my_score"] >= top - 2.0]
+        tier.sort(key=lambda r: ((r.get("factors") or {}).get("liquidity") or 0), reverse=True)
+        rest = [r for r in rows if r not in tier]
+        rows = tier + rest
     used_sector = dict(eq.get("sector_exposure") or {})
     eq_local = dict(eq)
     n_open = eq.get("n_positions", 0)
@@ -180,6 +189,17 @@ def build_plan(rows, ledger, eq, detail_by_code):
         liq_cap = max_safe_position(adv)
         sz = size_position(eq["equity"], row["price"], stop, liq_cap)
         if not sz:
+            continue
+        # ⭐ مخاطرة أقل من ١٪ بسبب سقف السيولة = صفقة لا تُقاس ⇒ مرفوض
+        if liq_cap and sz["risk_pct"] < 1.0:
+            plan["rejected"].append({
+                "code": code, "name": row.get("name"),
+                "reason": "السيولة محدودة ⇒ المخاطرة الفعلية %s%% أقل من ١%%" % money(sz["risk_pct"])})
+            if len(plan["watch"]) < POLICY["max_watch_items"]:
+                plan["watch"].append({"code": code, "name": row.get("name"),
+                                      "price": row.get("price"), "score": row.get("my_score"),
+                                      "why": ["سيولة ضعيفة — مخاطرة أقل من ١٪"],
+                                      "conflicts": row.get("conflicts") or []})
             continue
         # ⭐ مركز أصغر من الحد الأدنى = عملية غير مجدية ⇒ مرفوض (ومش «شراء صغير»)
         if sz["notional"] < POLICY["min_position_egp"]:
@@ -461,6 +481,15 @@ def main():
         ledger.seed(float(CAP))
     except Exception as e:  # noqa: BLE001
         print("⚠️ التهيئة اتأخّرت: %s" % str(e)[:110])
+    # ⭐ ادمج الطبقة الطازجة (أساسيات اليوم) — تملأ الناقص وتضيف حقول
+    try:
+        fresh = (ad.egx_full() or {}).get("stocks") or {}
+    except Exception as e:  # noqa: BLE001
+        print("⚠️ egx_full: %s" % str(e)[:80])
+        fresh = {}
+    universe, mstats = merge_fresh(universe, fresh)
+    sector = sector_medians(universe) or sector
+    print("🧩 الدمج مع الطبقة الطازجة: %s" % json.dumps(mstats.get("filled") or {}, ensure_ascii=False))
     rows = evaluate(universe, sector, divs)
     for r in rows:
         r["conflicts"] = detect_conflicts(r)
@@ -577,13 +606,13 @@ def main():
 
     print(text)
     print("\n--- 🔬 تشخيص أعلى ١٢ مرشّح ---")
-    print("%-7s %-28s %6s %5s %5s %5s %5s %5s %5s  %s" % ("code", "name", "score", "mom", "qual", "val", "liq", "risk", "cat", "gate"))
+    print("%-7s %-26s %6s %5s %5s %5s %5s %5s %5s %5s  %s" % ("code", "name", "score", "mom", "qual", "val", "liq", "risk", "cat", "gro", "gate"))
     for r in rows[:12]:
         f = r.get("factors") or {}
-        print("%-7s %-28s %6s %5s %5s %5s %5s %5s %5s  %s" % (
-            r["code"], (r.get("name") or "")[:27], r.get("my_score"),
+        print("%-7s %-26s %6s %5s %5s %5s %5s %5s %5s %5s  %s" % (
+            r["code"], (r.get("name") or "")[:25], r.get("my_score"),
             f.get("momentum"), f.get("quality"), f.get("value"), f.get("liquidity"),
-            f.get("risk"), f.get("catalyst"), " · ".join(gate(r))[:46]))
+            f.get("risk"), f.get("catalyst"), f.get("growth"), " · ".join(gate(r))[:40]))
     print("\n--- meta ---")
     print(json.dumps({"sent": ok, "message_id": mid, "entries": len(plan["entries"]),
                       "exits": len(plan["exits"]), "equity": eq.get("equity"),
