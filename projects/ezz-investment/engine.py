@@ -169,8 +169,11 @@ def build_plan(rows, ledger, eq, detail_by_code):
             continue
         if n_open >= POLICY["max_positions"]:
             continue
+        # ⛔ ٣ أوامر كحد أقصى في الرسالة الواحدة — والباقي يروح قائمة الرادار
+        if len(plan["entries"]) >= 3:
+            continue
         if open_risk >= POLICY["open_risk_max_pct"]:
-            break
+            continue
         detail = detail_by_code.get(code) or {}
         stop = pick_stop(row, detail)
         adv = adv_value(detail.get("candles"), row["price"])
@@ -214,8 +217,6 @@ def build_plan(rows, ledger, eq, detail_by_code):
                                     octa=row.get("octa_score"), divergence=row.get("divergence"),
                                     notional=sz["notional"], weight_pct=sz["weight_pct"],
                                     risk_pct=sz["risk_pct"], liq_cap=liq_cap, detail=detail))
-        if len(plan["entries"]) >= 3:
-            continue
     return plan
 
 
@@ -413,6 +414,7 @@ def main():
     dry = False
     fill_oid = None
     fill_price = None
+    msg = None
     i = 0
     while i < len(args):
         a = args[i]
@@ -424,8 +426,15 @@ def main():
             fill_oid = args[i + 1]; i += 2
         elif a == "--price":
             fill_price = float(args[i + 1]); i += 2
+        elif a == "--msg":
+            msg = args[i + 1]; i += 2
         else:
             i += 1
+
+    if msg:
+        ok, mid = send_telegram(msg, dry=dry)
+        print("أُرسل: %s (message_id=%s)" % (ok, mid))
+        return 0
 
     kv = KV()
     ledger = Ledger(kv)
