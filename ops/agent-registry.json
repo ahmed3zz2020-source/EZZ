@@ -25,44 +25,7 @@
     "EZZ-Session-Keeper": "أرشفة الجلسات — بالطلب.",
     "OCTA team (مروان-التشغيل · كريم-الأمن · سلمى-الواجهة · هالة-النمو · حيدر-البيانات · نور-الكوانت · ياسر-المحتوى · quant-dev · ui-ux · content-arabic)": "وكلاء مشاريع OCTA — بالطلب. ⛔ ليهمش كرونات."
   },
-  "live_crons": {
-    "458725814567285": {
-      "agent": "gold-watchdog",
-      "name": "مراقب بوت الذهب (ساعة · جلسة دايمة)",
-      "schedule": "0 * * * *",
-      "tz": "Africa/Cairo",
-      "session": "sessionId/fixed"
-    },
-    "458725804241047": {
-      "agent": "EZZ-Gate",
-      "name": "بوابة عز (الأسئلة المفتوحة · ٣ ساعات · جلسة دايمة)",
-      "schedule": "0 */3 * * *",
-      "tz": "Africa/Cairo",
-      "session": "sessionId/fixed"
-    },
-    "458725814567283": {
-      "agent": "EZZ-Brief",
-      "name": "تحليل أسبوعي (EZZ Weekly Analysis · جلسة دايمة)",
-      "schedule": "0 8 * * 0",
-      "tz": "Africa/Cairo",
-      "session": "sessionId/fixed"
-    },
-    "458061012963547": {
-      "agent": "Mavis ",
-      "name": "تذكير واحد: جسر بوت الذهب (الاثنين ٠٩:٠٠)",
-      "schedule": "one-shot",
-      "tz": "-",
-      "session": "sessionId"
-    },
-    "458465038860467": {
-      "agent": "بوابة-المكتب",
-      "name": "بوابة الاستقبال (*/5) — معطّل",
-      "schedule": "*/5 * * * *",
-      "tz": "Europe/Berlin",
-      "session": "sessionId",
-      "status": "disabled"
-    }
-  },
+  "live_crons": {},
   "frozen_crons": {
     "note": "كل دي كانت شغّالة واتشالت ١-١-١ بأمر المالك. الاستعادة = cron_create بنفس الإعدادات + session:{mode:'sessionId',session_id:'fixed'}. الـprompts الكاملة في topics/frozen-crons.md.",
     "items": [
@@ -207,5 +170,15 @@
       "٦–٨ دقايق ولا ١٠–١٤؟",
       "أسبوعي ولا كل أسبوعين؟"
     ]
+  },
+  "all_crons_stopped": {
+    "date": "2026-11-01",
+    "owner_decision": "«وقف كل الشغل اللى فى الخلفية نهائى» — كل الكرونات اتشالت (٥): gold-watchdog · EZZ-Gate · EZZ-Brief (الـ٣ الدائمة) + تذكير جسر الذهب (one-shot) + بوابة الاستقبال (معطّلة).",
+    "restore": "الإعدادات الكاملة (الجدول + TZ + session mode + الـprompt) في ops/frozen-live-crons.md ⇒ الاستعادة = cron_create + نفس agent_name + session:{mode:'sessionId',session_id:'fixed'}.",
+    "code_only": "الـWorkers (ezz-auto · ezz-daily · ezz-gate-send) شغّالين ودي صفر كريدت — سيبتها شغّالة. تتقفل，只需 موافقة المالك.",
+    "consequence": "محرك بوت الذهب مش هيتراقب دلوقتي (المراقب اتشال) — يحتاج موافقة المالك قبل أي إعادة تشغيل.",
+    "chat_cleanup": "≈١١٨ شات [cron] اتسمّى «· مؤر archiv ·». ⛔ ٤ شات مؤرشفين قداميين مش بيتقبل تعديلهم (أداة المنصة بترفض) — قائمة الـID في topics/frozen-crons.md.",
+    "content_paused": "⛔ محتوى فيديو المحفظة متوقف بقرار المالك (مش هيتشتغل).",
+    "tool_quirk_new": "⛔ session_update لازم الـarguments تُبعت كنص JSON واحد (مش object) وإلا الـhost بيحوّل الـsession_id لرقم والـvalidator بيرفضه («Expected string»). وخلّي كل نداءات session_update لوحدها في الدور (خلطها بـsession_list بيخليها تفشل كلها). و⛔ الشاتات المؤرشفة (archived=true) مش بتقبل تعديل خالص."
   }
 }
