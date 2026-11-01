@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-01",
+  "policy": {
+    "rule_1": "الوكيل الدائم = المسار اللي المؤسسة محتاجاه كل يوم بلا انقطاع. غيره = بالطلب: يُستدعى بالاسم، يشتغل على المهمة، ويقفل.",
+    "rule_2": "⛔ ممنوع إنشاء cron لوكيل بالطلب — الـcron للوكيل الدائم بس. بالطلب = مهمة واحدة تنتهي.",
+    "rule_3": "⛔ كل كرون متكرر = session:{mode:'sessionId', session_id:'fixed'} ⇒ شات واحد دائم للكرون (مش شات جديد كل تشغيل).",
+    "rule_4": "⛔ حذف/إعادة بناء الكرون = لازم تسجّل في core/frozen_crons.json قبل الحذف.",
+    "rule_5": "الأولوية قبل أي تعيين: الكود (Worker) قبل الكرون قبل الوكيل."
+  },
+  "permanent_agents": {
+    "gold-watchdog": "حماية محرك إشارة الذهب + تشغيل التقرير اليومي (٠٥:٠٠ UTC). مفيش غيره بيحيّي المحرك.",
+    "EZZ-Gate": "الأسئلة المفتوحة على بوت عز (كل ٣ ساعات) — الردود المعروفة كلها Worker.",
+    "EZZ-Brief": "التحليل الأسبوعي (الأحد ٠٨:٠٠)."
+  },
+  "on_demand_agents": {
+    "EZZ-Portfolio-Session": "تقرير محفظة جلسة عز استثمار — يُشغَّل عند الطلب (المحفظة ١٠٠٪ كاش).",
+    "EZZ-Portfolio-Night": "مسح ليلة المحفظة — بالطلب.",
+    "EZZ-Opportunity": "رادار الفرص الأسبوعي — بالطلب (أو حسباد كل أسبوعين).",
+    "gold-weekly": "صيانة بوت الذهب الأسبوعية (السبت) — بالطلب.",
+    "موازن-التوكنز": "مراجعة ميزانية التوكنز — بالطلب.",
+    "مكتب-الليل": "تقرير الليل — بالطلب.",
+    "OCTA-7-PRO": "فحص OCTA اليومي + تذكير Railway — بالطلب.",
+    "Mavis ": "المدير — شات واحد دائم (الجلسة الحالية).",
+    "cron-cleaner": "أرشفة شاتات الكرون — بالطلب (لما تتكدس).",
+    "EZZ-Session-Keeper": "أرشفة الجلسات — بالطلب.",
+    "OCTA team (مروان-التشغيل · كريم-الأمن · سلمى-الواجهة · هالة-النمو · حيدر-البيانات · نور-الكوانت · ياسر-المحتوى · quant-dev · ui-ux · content-arabic)": "وكلاء مشاريع OCTA — بالطلب. ⛔ ليهمش كرونات."
+  },
+  "live_crons": {
+    "458725814567285": {
+      "agent": "gold-watchdog",
+      "name": "مراقب بوت الذهب (ساعة · جلسة دايمة)",
+      "schedule": "0 * * * *",
+      "tz": "Africa/Cairo",
+      "session": "sessionId/fixed"
+    },
+    "458725804241047": {
+      "agent": "EZZ-Gate",
+      "name": "بوابة عز (الأسئلة المفتوحة · ٣ ساعات · جلسة دايمة)",
+      "schedule": "0 */3 * * *",
+      "tz": "Africa/Cairo",
+      "session": "sessionId/fixed"
+    },
+    "458725814567283": {
+      "agent": "EZZ-Brief",
+      "name": "تحليل أسبوعي (EZZ Weekly Analysis · جلسة دايمة)",
+      "schedule": "0 8 * * 0",
+      "tz": "Africa/Cairo",
+      "session": "sessionId/fixed"
+    },
+    "458061012963547": {
+      "agent": "Mavis ",
+      "name": "تذكير واحد: جسر بوت الذهب (الاثنين ٠٩:٠٠)",
+      "schedule": "one-shot",
+      "tz": "-",
+      "session": "sessionId"
+    },
+    "458465038860467": {
+      "agent": "بوابة-المكتب",
+      "name": "بوابة الاستقبال (*/5) — معطّل",
+      "schedule": "*/5 * * * *",
+      "tz": "Europe/Berlin",
+      "session": "sessionId",
+      "status": "disabled"
+    }
+  },
+  "frozen_crons": {
+    "note": "كل دي كانت شغّالة واتشالت ١-١-١ بأمر المالك. الاستعادة = cron_create بنفس الإعدادات + session:{mode:'sessionId',session_id:'fixed'}. الـprompts الكاملة في topics/frozen-crons.md.",
+    "items": [
+      {
+        "id": "458712519454820",
+        "agent": "EZZ-Brief",
+        "name": "التقرير اليومي (EZZ Daily Executive Briefing)",
+        "schedule": "0 7 * * *",
+        "tz": "Africa/Cairo",
+        "reason": "التقرير اليومي بقى Worker (ezz-daily) بصفر توكن"
+      },
+      {
+        "id": "458712519454821",
+        "agent": "EZZ-Portfolio-Session",
+        "name": "عز استثمار — تقرير الجلسة (١٣:٤٥)",
+        "schedule": "45 13 * * 0-4",
+        "tz": "Africa/Cairo",
+        "reason": "المحفظة ١٠٠٪ كاش — بالطلب"
+      },
+      {
+        "id": "458712644288706",
+        "agent": "EZZ-Portfolio-Night",
+        "name": "عز استثمار — مسح الليلة (٢٣:٠٠)",
+        "schedule": "0 23 * * 0-4",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب"
+      },
+      {
+        "id": "458713011048804",
+        "agent": "EZZ-Opportunity",
+        "name": "رادار الفرص الأسبوعي",
+        "schedule": "0 9 * * 6",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب"
+      },
+      {
+        "id": "458712644288707",
+        "agent": "gold-weekly",
+        "name": "صيانة بوت الذهب الأسبوعية (السبت)",
+        "schedule": "0 12 * * 6",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب — المراقب الساعي كفاية"
+      },
+      {
+        "id": "458711048991100",
+        "agent": "موازن-التوكنز",
+        "name": "مراقبة ميزانية التوكنز (أسبوعياً)",
+        "schedule": "0 10 * * 1",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب — المراجعة بتتم يدوي"
+      },
+      {
+        "id": "450286641770733",
+        "agent": "Mavis ",
+        "name": "تذكير: مفتاح RapidAPI لعمق السوق",
+        "schedule": "0 11 * * 1",
+        "tz": "Europe/Berlin",
+        "reason": "بالطلب — المفتاح لسه ما جاش"
+      },
+      {
+        "id": "458713011048805",
+        "agent": "مكتب-الليل",
+        "name": "تقرير الليل — المراجعة",
+        "schedule": "30 22 * * *",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب"
+      },
+      {
+        "id": "452479550636333",
+        "agent": "OCTA-7-PRO",
+        "name": "فحص OCTA اليومي + تذكير Railway",
+        "schedule": "0 9 * * *",
+        "tz": "Europe/Moscow",
+        "reason": "بالطلب"
+      },
+      {
+        "id": "456583501254970",
+        "agent": "Mavis ",
+        "name": "تحديث لقطة البورصة الرسمية + تاريخ المؤشرات",
+        "schedule": "10 15 * * *",
+        "tz": "Africa/Cairo",
+        "reason": "بالطلب —Indices بالـAPI بتتحدّث لحظي"
+      },
+      {
+        "id": "458061024112739",
+        "agent": "Mavis ",
+        "name": "بوت الذهب — فحص يومي (محرّك + تعلّم + إشارة)",
+        "schedule": "45 8 * * 0-4",
+        "tz": "Europe/Berlin",
+        "reason": "المحرك شغّال — بالطلب"
+      },
+      {
+        "id": "458356168454510",
+        "agent": "gold-keepalive",
+        "name": "إعادة تشغيل بوت الذهب (استعجال)",
+        "schedule": "one-shot",
+        "tz": "-",
+        "reason": "المحرك بيتغذّى من المراقب الساعي"
+      }
+    ]
+  },
+  "tool_quirks": {
+    "session_update_archived": "⛔ الـboolean بيرجع «/archived: Expected boolean» — الخطأ متقطّع وبيصلاح بعد إعادة المحاولة (٨ محاولات كفاية). مفيش tool_delete للشاتات.",
+    "cron_update_enabled": "⛔ نفس المشكلة في enabled ⇒ التجميد = cron_delete (والاستعادة = cron_create).",
+    "cron_update_fixed": "⛔ cron_update بـsession_id:'fixed' مرفوض («fixed for creation only») ⇒ لإعادة البناء لازم تحذف وتعمل create جديد.",
+    "cron_create_fixed": "✅ session:{mode:'sessionId', session_id:'fixed'} اشتغل ⇒ كرون واحد = شات واحد دائم (مش شات جديد كل تشغيل).",
+    "session_list_limit": "⛔ limit رقمي بيرجع «/limit: Expected integer» ⇒ سيبه وادعِ pagination بـcursor.",
+    "session_list_all": "✅ session_list من غير agent_name بيرجع كل الجلسات بتاعة المستخدم (بـpagination)."
+  },
+  "chat_flood_fix": {
+    "before": "كل كرون بـmode:new كان بيعمل شات جديد كل تشغيل ⇒ قائمة الشاتات امتلأت بـ[cron] وبحث cron رجّع عشرات.",
+    "after": "الكرونات الـ٣ الحيّة بقت sessionId/fixed ⇒ ٣ شاتات دايمة بس مهما اشتغلت. الشاتات القديمة اتأرشفت.",
+    "why_fixed": "mod:new كان ي pouring context جديد كل مرة + شات جديد. sessionId/fixed: شات واحد بيتحدّث + سياق بيتراكم ببطء (⇒ تدوير كل ~٢٨ يوم لل_crون الساعي)."
+  },
+  "code_first_note": "⛔ القاعدة الأهم: أي مهمة قراءة-كتابة-رد ⇒ Worker (صفر توكن). الموديل للحكم والشرح بس. البوابة والتقرير اليومي اتحولوا لـWorker."
+}
