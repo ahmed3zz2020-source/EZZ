@@ -1,8 +1,8 @@
 {
   "phase": "2 — بناء الإدارة التنفيذية",
-  "updated": "2026-10-31",
-  "agents_defined": 12,
-  "agents_active": 4,
+  "updated": "2026-11-01",
+  "agents_defined": 13,
+  "agents_active": 7,
   "agents_active_list": [
     "EZZ-Opportunity",
     "EZZ-Audit",
@@ -10,11 +10,6 @@
     "Mavis (EZZ-CEO)"
   ],
   "open_decisions": [
-    {
-      "id": "D-0003",
-      "title": "توكن بوت تيليجرام الجديد للمكتب",
-      "status": "pending"
-    },
     {
       "id": "D-0004",
       "title": "حدود الإذن: إرسال باسم المالك أم تجهيز فقط",
@@ -28,7 +23,9 @@
   ],
   "resolved_decisions": [
     "D-0001",
-    "D-0002"
+    "D-0002",
+    "D-0003",
+    "D-0006"
   ],
   "opportunities_count": 6,
   "top_opportunity": "بيع خدمة رقمية عربية عبر سوق الخدمات — صافي 80٪ من سعر الخدمة",
@@ -52,5 +49,24 @@
       "fixed": 18
     }
   },
-  "mirror_note": "نسخة مُحدَّثة من Cloudflare KV بواسطة EZZ-Brief — المصدر: core/state.json"
+  "mirror_note": "نسخة مُحدَّثة من Cloudflare KV بواسطة EZZ-Brief — المصدر: core/state.json",
+  "token_budget": {
+    "date": "2026-11-01",
+    "cost_per_run": 5450,
+    "runs_per_day": 127,
+    "cost_per_day": 696000,
+    "cap_runs_per_day": 150,
+    "before_fix_per_day": 28000000,
+    "saving_pct": 97.5,
+    "rule": "كل كرون متكرر = mode:new (سياق نظيف) — التكلفة ثابتة مهما طال الوقت",
+    "file": "ops/TOKEN-BUDGET.md"
+  },
+  "portfolio": {
+    "project": "ezz-investment",
+    "kv_namespace": "a4509b030f394d478736ed1d186778fb",
+    "state": "100% كاش — راس المال 100,000 ج.م · مفيش مراكز مسجلة",
+    "last_plan_date": "2026-11-01",
+    "last_plan_value": 77650,
+    "note": "التوصية ≠ أمر ≠ تنفيذ — التنفيذ بيد المالك (ثاندر) وبتأكيده (سعر + كمية + عمولة)"
+  }
 }
