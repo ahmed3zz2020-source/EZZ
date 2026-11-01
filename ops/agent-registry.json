@@ -170,12 +170,42 @@
     "cron_update_fixed": "⛔ cron_update بـsession_id:'fixed' مرفوض («fixed for creation only») ⇒ لإعادة البناء لازم تحذف وتعمل create جديد.",
     "cron_create_fixed": "✅ session:{mode:'sessionId', session_id:'fixed'} اشتغل ⇒ كرون واحد = شات واحد دائم (مش شات جديد كل تشغيل).",
     "session_list_limit": "⛔ limit رقمي بيرجع «/limit: Expected integer» ⇒ سيبه وادعِ pagination بـcursor.",
-    "session_list_all": "✅ session_list من غير agent_name بيرجع كل الجلسات بتاعة المستخدم (بـpagination)."
+    "session_list_all": "✅ session_list من غير agent_name بيرجع كل الجلسات بتاعة المستخدم (بـpagination).",
+    "session_update_flaky": "⛔ بعد عدد من الاستدعاءات المتتابعة، session_update بيرجع «/session_id: Expected string» لكل المعرّفات — حتى المعرّف اللي نجح قبلها بدقيقتين. السبب من طبقة الأدوات مش من الجلسات. الحل: استنى ١٠ ثواني وأعد المحاولة، ونفّذها جلسة(session) واحدة في كل مرة (الاستدعاءات المتوازية بتزيد فشلها)، أو فوّضها لمساعد في جلسة منفصلة.",
+    "session_update_arguments_json": "⛔ arguments_json مرفوض مع tool_name (متاح مع tool_ref بس) ⇒ ابعت arguments كـobject عادي.",
+    "cron_fixed_storage": "✅ cron_create بـsession:{mode:'sessionId', session_id:'fixed'} بيتخزّن عنده session_id: \"\" ⇒ يعني «شات خاص بالـcron» بيتعمل أول مرة عند أول تشغيل وبعدها بيتعاد استخدام نفس الشات (مش شات جديد كل تشغيل). ⇒ القياس لازم يتعمل بعد أول تشغيلين، مش قبل كده (run_count=0)."
   },
   "chat_flood_fix": {
     "before": "كل كرون بـmode:new كان بيعمل شات جديد كل تشغيل ⇒ قائمة الشاتات امتلأت بـ[cron] وبحث cron رجّع عشرات.",
     "after": "الكرونات الـ٣ الحيّة بقت sessionId/fixed ⇒ ٣ شاتات دايمة بس مهما اشتغلت. الشاتات القديمة اتأرشفت.",
     "why_fixed": "mod:new كان ي pouring context جديد كل مرة + شات جديد. sessionId/fixed: شات واحد بيتحدّث + سياق بيتراكم ببطء (⇒ تدوير كل ~٢٨ يوم لل_crون الساعي)."
   },
-  "code_first_note": "⛔ القاعدة الأهم: أي مهمة قراءة-كتابة-رد ⇒ Worker (صفر توكن). الموديل للحكم والشرح بس. البوابة والتقرير اليومي اتحولوا لـWorker."
+  "code_first_note": "⛔ القاعدة الأهم: أي مهمة قراءة-كتابة-رد ⇒ Worker (صفر توكن). الموديل للحكم والشرح بس. البوابة والتقرير اليومي اتحولوا لـWorker. ⭐ ولما الـWorker يوصل حد معين، المطلوب يروح كود مش كروبوت.",
+  "chat_cleanup": {
+    "date": "2026-11-01",
+    "goal": "إخفاء شاتات الكرون من بحث/list الشاتات ⇒ كل عنوان بيبدأ بـ[cron] بيتسمّى «· مؤرشف ·».",
+    "done": "أكثر من ٩٥ جلسة اتسمّت (٤ موجات: gold-keepalive ١٤ · بوابة-المكتب ١٠ · OCTA-7-PRO ١٠ · Mavis ١١ + موجات سابقة).",
+    "archived_flag": "⛔ الأرشفة الحقيقية (archived=true) مش شغّالة ⇒ الحل عمليًا = إعادة التسمية.",
+    "pending": "≈٢٠ جلسة قديمة (٢٣–٣١ أكتوبر) فشلت في التسمية بسبب رفض الأداة المؤقت ⇒ تُعاد تسميتها أول ما الأداة ترجع.",
+    "by_agent": {
+      "gold-keepalive": "١٤",
+      "بوابة-المكتب": "١٠",
+      "OCTA-7-PRO": "١٠+",
+      "Mavis ": "١١+",
+      "مكتب-الليل": "٢",
+      "EZZ-Gate / gold-watchdog / EZZ-Brief": "تم تسمية الجلسات القديمة فقط"
+    },
+    "live_cron_sessions": "الكرونات الـ٣ الحيّة (session_id=fixed) ⇒ بعد أول تشغيلين: ٣ شاتات دايمة بس مهما اشتغلت."
+  },
+  "content_direction": {
+    "status": "⏸️ قناة «محفظة ١٠٠ ألف» متوقفة نهائيًا (قرار المالك) · التوجّه = محتوى عام للمجال (بورصة/استثمار/وثائقي).",
+    "formula": "تشريح (قرار حقيقي ← تحقيق بالأرقام ← حكم ← درس) — الأقوى.",
+    "episode_1": "«تشريح ١ — القرار» (٧ دقايق) — المسودة في /workspace/output/ezz-episode-1-script-v0.1.md · التفاصيل في topics/ezz-content.md.",
+    "pending_owner_decisions": [
+      "مقدّم بصوتك ولا راوي؟",
+      "مصري ولا فصحى؟",
+      "٦–٨ دقايق ولا ١٠–١٤؟",
+      "أسبوعي ولا كل أسبوعين؟"
+    ]
+  }
 }
