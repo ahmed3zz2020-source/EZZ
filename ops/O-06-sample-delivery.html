@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>نموذج تسليم — ملخّص تنفيذي عربي</title>
+<style>
+  @page { size: A4; margin: 12mm 12mm 10mm; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    font-family: "Cairo", sans-serif;
+    color:#14181f;
+    font-size: 10.4pt;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sheet { width: 186mm; }
+
+  /* ---------- head ---------- */
+  .head { display:flex; justify-content:space-between; align-items:flex-start;
+          border-bottom: 2.5px solid #14181f; padding-bottom: 8px; }
+  .kicker { font-size: 8.6pt; letter-spacing:.06em; color:#7b8494; font-weight:600; }
+  h1 { font-size: 19pt; margin: 3px 0 2px; font-weight:800; line-height:1.25; }
+  .sub { font-size: 9.4pt; color:#4a5361; }
+  .stamp { text-align:left; font-size: 8.4pt; color:#7b8494; line-height:1.55; white-space:nowrap; }
+  .stamp b { display:block; color:#14181f; font-size:9.6pt; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 13px; }
+  h2 { font-size: 10.6pt; margin: 0 0 7px; font-weight:800; letter-spacing:.01em;
+       display:flex; align-items:center; gap:7px; }
+  h2 .num { background:#14181f; color:#fff; border-radius:4px; font-size:8.2pt;
+            width:16px; height:16px; display:inline-flex; align-items:center;
+            justify-content:center; font-weight:700; }
+
+  ol { margin:0; padding:0; list-style:none; counter-reset:p; }
+  ol li { counter-increment:p; position:relative; padding-right:26px; margin-bottom:5px; }
+  ol li::before { content: counter(p); position:absolute; right:0; top:1px;
+    width:17px; height:17px; border:1.4px solid #c3c9d4; border-radius:50%;
+    font-size:8.4pt; font-weight:700; color:#4a5361;
+    display:flex; align-items:center; justify-content:center; }
+  ol li b { font-weight:700; }
+
+  table { width:100%; border-collapse:collapse; font-size:9.3pt; }
+  th, td { text-align:right; padding:5.5px 8px; border-bottom:1px solid #e6e9ef; vertical-align:top; }
+  th { background:#f4f6f9; font-weight:700; font-size:9pt; color:#39414e;
+       border-bottom:1.4px solid #d4d9e1; }
+  td.v { font-weight:800; white-space:nowrap; }
+  td.src { color:#7b8494; font-size:8.5pt; }
+  tr.hl td { background:#fbfcfd; }
+  .note { color:#5a6472; font-size:8.5pt; margin-top:6px; }
+
+  .decision { background:#f4f6f9; border-right:4px solid #14181f; padding:10px 13px;
+              border-radius:0 6px 6px 0; font-size:10pt; }
+  .decision .lbl { font-size:8.4pt; font-weight:700; color:#7b8494; letter-spacing:.05em; margin-bottom:2px; }
+
+  .task { display:flex; gap:9px; align-items:flex-start; background:#fffdf5;
+          border:1px solid #ecdfb8; border-radius:6px; padding:9px 12px; font-size:9.7pt; }
+
+  .caveats { font-size:8.9pt; color:#5a6472; }
+  .caveats li { margin-bottom:3px; }
+  .caveats b { color:#14181f; }
+
+  .foot { margin-top:14px; padding-top:7px; border-top:1px solid #d4d9e1;
+          font-size:8.1pt; color:#8b93a1; line-height:1.55; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="head">
+    <div>
+      <div class="kicker">ملخّص تنفيذي · صفحة واحدة</div>
+      <h1>فرصة بيع خدمة رقمية عربية عبر سوق الخدمات</h1>
+      <div class="sub">صافي 80٪ من سعر الخدمة — المسار الحرج: دخل مستقل لا يعتمد على الجمهور القائم</div>
+    </div>
+    <div class="stamp">
+      <b>31 أكتوبر 2026</b>
+      مُعدّ من: ملف رادار الفرص — البند O-06<br>
+      الملف المرفق: 6 فرص مسجّلة بمصادرها
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="num">1</span> أول ٣ أولويات</h2>
+    <ol>
+      <li><b>جهّز خدمة واحدة بسعر 5$</b> تُنتج من محتوى الإنتاج القائم في يوم واحد، مع وصف دقيق للمخرجات وموعد تسليم، واعرضها على المالك.</li>
+      <li><b>بعد موافقة المالك:</b> فتح حساب بائع وسحب الأرباح باسمه — يدخل فيه المالك وحده.</li>
+      <li><b>قِس من أول 30 يوم:</b> الطلبات المستلمة · نسبة إتمام الطلبات · مدة التسليم لكل طلب.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span> الأرقام المهمة</h2>
+    <table>
+      <thead>
+        <tr><th style="width:47%">البند</th><th style="width:19%">القيمة</th><th>المصدر</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>سعر الحد الأدنى للخدمات</td><td class="v">5$</td><td class="src">خمسات — صفحة الأسئلة</td></tr>
+        <tr><td>عمولة المنصة (20٪ من الأرباح)</td><td class="v">1$ لكل 5$</td><td class="src">خمسات — رسوم الباعة</td></tr>
+        <tr class="hl"><td><b>الصافي لكل خدمة عند الحد الأدنى</b></td><td class="v">4$</td><td class="src">محسوب من الرقمين أعلاه — ليس رقم سوق</td></tr>
+        <tr><td>رسم تسجيل البائع</td><td class="v">صفر</td><td class="src">خمسات — الشروط</td></tr>
+        <tr><td>سيناريو تشغيلي (20 خدمة)</td><td class="v">80$</td><td class="src">افتراض للقياس — ليس بيانات منشورة</td></tr>
+      </tbody>
+    </table>
+    <div class="note">الرسوم الإجرائية على الطلب تظهر للمشتري قبل الدفع — قيمتها غير منشورة، ولا تُحمَّل على البائع. الأرباح تُحجز حتى يصل المبلغ لحساب المنصة.</div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span> القرار المقترح</h2>
+    <div class="decision">
+      <div class="lbl">قرار واحد مطلوب الآن</div>
+      اعتماد <b>«ملخّص تنفيذي عربي»</b> كأول خدمة بسعر <b>5$</b>، والتسليم خلال <b>24 ساعة</b>، والاعلان عن السعر على المنصة بعد موافقة المالك فقط.
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span> المهمة التالية</h2>
+    <div class="task">
+      <span>◷</span>
+      <span>إخراج نموذج التسليم (هذه الصفحة) + نص عرض الخدمة + صور الغلاف، ثم فتح حساب البائع باسم المالك. زمن التنفيذ المستهدف لكل طلب: 30–45 دقيقة.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span> قيود وفجوات بيانات</h2>
+    <ul class="caveats">
+      <li>العمولة تُقتطع من البائع وحده، و<b>ممنوع تحميلها على المشتري أو التفاوض عليها</b>.</li>
+      <li>لا توجد أرقام منشورة لمتوسط دخل البائع العربي على المنصة، ولا لعدد الطلبات المتوقعة على بائع جديد — أي رقم تقديري في هذا الملف هو افتراض تشغيلي للقياس.</li>
+      <li>أي التزام سعر أو ضمان خارج شروط المنصة يُعامَل كمخرَج يستحق موافقة مسبقة.</li>
+      <li>مؤشر الأداء المعلن على المنصة هو <b>معدل إتمام الطلبات</b> — لذلك سرعة التسليم هي المتغير الأول، قبل جودة المحتوى.</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    المصادر: khamsat.com/faq · support.khamsat.com/sellers-fees · khamsat.com/terms · khamsat.com/levels — قراءة 31 أكتوبر 2026 · المصدر الداخلي: رادار الفرص EZZ، البند O-06 (المسجّل بمصادره).
+    كل رقم في هذه الصفحة قابل للرجوع إلى مصدره داخل الملف المرفق. لا يوجد رقم بلا مصدر.
+  </div>
+
+</div>
+</body>
+</html>
