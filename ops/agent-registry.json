@@ -204,5 +204,38 @@
     "send_path": "Worker scheduled handler ⇒ sendTelegram (service binding SEND) ⇒ @EzzDeskBot · chat 2073907990",
     "proof": "تقرير ٣ نوفمبر اتبعت يدوي (message_id 50) · والجدولة اتقفلت بـ200 من الـAPI",
     "stop": "احذف الجدولة: PUT /workers/scripts/ezz-daily/schedules بـ[] (المصفوفة لازم)"
+  },
+  "telegram_bot_v2": {
+    "date": "2026-11-03",
+    "script": "ezz-auto2",
+    "url": "https://ezz-auto2.ahmed3zz2020.workers.dev/telegram",
+    "switched": true,
+    "old_script": "ezz-auto (احتياطي — الويب هوك اتحوّل)",
+    "intents": [
+      "status(ملخص)",
+      "portfolio(محفظة/رصيد/فلوس)",
+      "orders(أوامر/شراء/بيع)",
+      "tasks(مهام/T-xxxx)",
+      "decisions(قرارات)",
+      "market(بورصة/مؤشرات)",
+      "gold(ذهب/جرام/دولار)",
+      "stock(رمز أي سهم)",
+      "budget(تكلفة/توكنز)",
+      "content(محتوى)",
+      "cleanup(تنظيف شاتات)",
+      "report(تقرير يومي)",
+      "fallback(قائمة اختيارات)"
+    ],
+    "data_sources": {
+      "live": "OCTA API (/api/indices · /api/gold · /api/explain/<code>) وقت السؤال",
+      "ours": "KV ezz-central-memory + ezz-investment (portfolio/decisions.json)"
+    },
+    "rules": [
+      "ما بياخدش قرار شراء/بيع ولا توصية",
+      "الأرقام من مصدرها",
+      "المجهول ⇒ رد فوري بقائمة اختيارات + تسجيل في core/inbox",
+      "صفر توكن (كود فقط)"
+    ],
+    "notes": "المؤشرات والأرقام اللحظية من OCTA API · أوامر ٣١ أكتوبر مسجّلة في portfolio/decisions.json · التوكن بصفر"
   }
 }
