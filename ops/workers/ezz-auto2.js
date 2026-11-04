@@ -239,6 +239,10 @@ function classify(t) {
 }
 async function answer(env, text) {
   const c = classify(text);
+  if (/مراقب|تنبيهات|تنبيه|watch/i.test(text)) {
+    const w = await kvGet(env.M, "watch/last.json");
+    return { kind: "watch", text: replyWatch(w) };
+  }
   if (!c) return { kind: null, text: replyFallback(text) };
   if (c.k === "help") return { kind: "help", text: replyHelp() };
   if (c.k === "stock") return { kind: "stock", text: await replyStock(c.code) };
@@ -360,4 +364,29 @@ async function priceBlock(orders) {
     pl += (p.price - nf(o.price)) * nf(o.qty);
   }
   return { prices, now: have ? now : null, pl: have ? pl : null };
+}
+
+function replyWatch(w) {
+  if (!w || !w.ts) return "\u{1F448} مراقب قرار المحفظة لسه ما اشتغلش — أول فحص هيحصل مع أول تشغيل.";
+  const L = [];
+  L.push("\u{1F448} مراقب قرار المحفظة");
+  L.push("آخر فحص: " + new Date(w.ts).toISOString().slice(0, 16).replace("T", " ") + " UTC");
+  const items = w.items || {};
+  const keys = Object.keys(items);
+  L.push("أسهم مراقَبة: " + keys.length);
+  for (const code of keys) {
+    const it = items[code] || {};
+    let line = "• " + code + " · " + (typeof it.price === "number" ? it.price.toFixed(2) : "لا توجد بيانات");
+    if (typeof it.score === "number") line += " · الدرجة " + it.score.toFixed(1);
+    if (it.stop_broken) line += " · ⛔ وقف الخسارة اتكسر";
+    L.push(line);
+  }
+  const hist = (w.history || []).slice(-5);
+  L.push("");
+  if (hist.length) {
+    L.push("آخر التنبيهات:");
+    for (const h of hist) L.push("• " + (h.kind === "stop" ? "وقف الخسارة اتكسر" : "رأي المحرك اتغيّر") + " — " + h.code + " · " + new Date(h.ts).toISOString().slice(5, 16).replace("T", " "));
+  } else L.push("مفيش تنبيهات لسه.");
+  L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر.");
+  return L.join("\n");
 }
