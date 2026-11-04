@@ -51,46 +51,65 @@ async function snapshot(env) {
 }
 function replyPortfolio(s, live) {
   const nPos = Object.keys(s.positions).length;
-  const invested = s.capital - s.cash;
-  const L = ["حالة عز استثمار — " + new Date().toISOString().slice(0, 10)];
-  L.push("رأس المال: " + money(s.capital) + " ج.م · كاش: " + money(s.cash));
-  L.push(nPos ? ("مراكز مفتوحة: " + nPos + " · مستثمر: " + money(invested) + " ج.م") : "مفيش مراكز مفتوحة — المحفظة كاش ١٠٠٪");
+  const L = [];
+  L.push("💰 عز استثمار — " + new Date().toISOString().slice(0, 10));
+  L.push("رأس المال: " + money(s.capital) + " ج.م");
+  L.push("كاش: " + money(s.cash) + " ج.م");
+  L.push("مراكز مفتوحة: " + nPos);
+  if (!nPos) L.push("⇐ كاش 100% (مفيش أوامر منفَّذة)");
   const d = s.decisions;
   if (d && Array.isArray(d.orders) && d.orders.length) {
-    L.push("أوامر مستنية تنفيذك: " + d.orders.length + " · إجمالي " + money(d.total) + " ج.م");
+    L.push("");
+    L.push("📝 أوامر مستنية تنفيذك (" + d.orders.length + ") — " + money(d.total) + " ج.م");
     if (live && live.pl !== null && live.pl !== undefined) {
-      L.push("لو نُفِّذت بسعر التوصية: " + money(live.now) + " ج.م ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
+      L.push("💡 لو نُفِّذت بسعر التوصية: " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
     }
-  } else L.push("مفيش أوامر مسجّلة في الداتا.");
+  } else {
+    L.push("");
+    L.push("📝 مفيش أوامر مسجّلة في الداتا.");
+  }
   L.push("⛔ التوصية مش أمر — التنفيذ بيدك في ثاندر.");
   if (s.lastUpdate) L.push("آخر تحديث الداتا: " + String(s.lastUpdate).slice(0, 10));
   return L.join("\n");
 }
 function replyOrders(s, live) {
   const d = s.decisions;
-  if (!d || !Array.isArray(d.orders) || !d.orders.length) return "مفيش أوامر مسجّلة في الداتا — قولّي خططها لك أول مرة.";
-  const L = ["أوامر المحفظة المتسجّلة (" + (d.date || "") + ") — " + d.orders.length + " أوامر"];
+  if (!d || !Array.isArray(d.orders) || !d.orders.length) return "📝 مفيش أوامر مسجّلة في الداتا — قولّي خططها لك أول مرة.";
+  const L = [];
+  L.push("📝 أوامر مستنية تنفيذك (" + d.orders.length + ")");
+  L.push("التاريخ: " + (d.date || "") + " · الإجمالي: " + money(d.total) + " ج.م");
+  L.push("");
   for (const o of d.orders) {
-    let line = o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2) + " (وقف " + nf(o.stop).toFixed(2) + ")";
+    L.push("• " + (o.name || o.code) + " (" + o.code + ") — " + nf(o.qty) + " سهم");
+    L.push("سعر التوصية: " + nf(o.price).toFixed(2));
     const p = live && live.prices ? live.prices[o.code] : null;
     if (p && typeof p.price === "number") {
       const pl = p.price - nf(o.price), pc = pl / nf(o.price) * 100;
-      line += " · الآن " + p.price.toFixed(2) + " (" + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "% · " + money(pl * nf(o.qty)) + " ج.م)";
+      L.push("السعر الآن: " + p.price.toFixed(2));
+      L.push("التغيّر: " + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "%");
+      L.push((pl >= 0 ? "الربح: " : "الخسارة: ") + money(Math.abs(pl * nf(o.qty))) + " ج.м");
     }
-    L.push(line);
+    L.push("سعر الوقف: " + nf(o.stop).toFixed(2));
+    L.push("");
   }
-  L.push("الإجمالي: " + money(d.total) + " ج.م · الكاش بعد التنفيذ: " + money(d.cash_after) + " ج.م");
-  if (live && live.pl !== null && live.pl !== undefined && live.pl !== undefined) {
-    L.push("لو نُفِّذت الأوامر بسعر التوصية: " + money(live.now) + " ج.م بدل " + money(d.total) + " ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
+  if (live && live.pl !== null && live.pl !== undefined) {
+    L.push("💡 لو نُفِّذت الأوامر بسعر التوصية:");
+    L.push("القيمة الآن: " + money(live.now) + " ج.م");
+    L.push("مقابل التوصية: " + money(d.total) + " ج.م");
+    L.push("⇐ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
   }
-  L.push("الحالة: " + (d.status || "") + " · " + (d.rule || ""));
   L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر.");
   return L.join("\n");
 }
 function replyTasks(s) {
-  const L = ["المهام والقرارات المفتوحة — " + s.open.length + " بند"];
-  if (!s.open.length) return L.concat(["مفيش بند مفتوح."]).join("\n");
-  for (const t of s.open.slice(0, 12)) L.push(t.id + " · " + (t.prio || "") + " — " + (t.title || "").slice(0, 70));
+  const L = [];
+  L.push("⚠️ محتاج قرارك (" + s.open.length + ")");
+  if (!s.open.length) { L.push("مفيش بند مفتوح."); return L.join("\n"); }
+  for (const t of s.open.slice(0, 12)) {
+    L.push("• " + t.id + " · " + (t.prio || "") + " · " + (t.status || ""));
+    const title = (t.title || "").slice(0, 70);
+    if (title) L.push(title);
+  }
   if (s.open.length > 12) L.push("… و" + (s.open.length - 12) + " بند تاني.");
   return L.join("\n");
 }
@@ -110,31 +129,37 @@ function replyDecisions(s) {
   return L.join("\n");
 }
 function replyGold(s, live) {
-  const g = s.gold || {}, L = ["بوت الذهب"];
-  L.push("المحرك: " + (g.engine_alive === false ? "مش شغّال" : "شغّال") + " · " + (g.schedule || "لا توجد بيانات"));
-  if (g.m15 !== undefined) L.push("m15: " + nf(g.m15) + " (محتاج " + nf(g.needed_for_warm) + ") · warm: " + (g.warm ? "نعم" : "لا"));
+  const g = s.gold || {};
+  const L = [];
+  L.push("🥇 الذهب وبوت الذهب");
   const gm = (live && live.gold) || s.meta.gold || {};
-  if (gm.gram_egp) L.push("جرام الذهب: " + money(gm.gram_egp) + " ج.م · الدولار: " + nf(gm.egp_per_usd).toFixed(2));
-  else L.push("سعر الجرام: لا توجد بيانات");
+  if (gm.gram_egp) {
+    L.push("الجرام: " + money(gm.gram_egp) + " ج.م");
+    L.push("الدولار: " + nf(gm.egp_per_usd).toFixed(2) + " ج.م");
+  } else L.push("سعر الجرام: لا توجد بيانات");
+  L.push("");
+  L.push("بوت الذهب: " + (g.engine_alive === false ? "مش شغّال" : "شغّال") + (g.schedule ? " · " + g.schedule : ""));
+  if (g.m15 !== undefined) L.push("نماذج m15: " + nf(g.m15) + " (محتاج " + nf(g.needed_for_warm) + ") · تسخين: " + (g.warm ? "نعم" : "لا"));
   L.push("مفيش صفقات مغلقة — المحرك في وضع التعلّم.");
   return L.join("\n");
 }
 function replyMarket(s, live) {
-  const L = ["السوق"];
+  const L = [];
   const ms = (live && live.idx && live.idx.market_status) || null;
-  if (ms) L.push("الحالة: " + (ms.status_ar || ms.status || "") + " · " + String(ms.as_of || "").slice(11, 16) + " UTC");
   const idx = (live && live.idx && live.idx.indices) || [];
+  L.push("📈 السوق" + (idx.length ? " (آخر جلسة · مباشرة من محرك OCTA)" : ""));
+  if (ms) L.push("الحالة: " + (ms.status_ar || ms.status || "") + " · " + String(ms.as_of || "").slice(11, 16) + " UTC");
   for (const it of idx) {
     const v = dig(it, ["value", "last", "price", "close"]), c = dig(it, ["change", "change_pct", "percent", "day_change"]);
-    if (v !== null) L.push((it.id || "") + ": " + ar(v) + (c !== null ? " (" + pct(c) + ")" : "") + (it.short_ar ? " · " + it.short_ar : ""));
+    if (v !== null) L.push((it.short_ar || it.id) + " (" + it.id + "): " + nf(v).toLocaleString("en-US") + (c !== null ? " (" + pct(c) + ")" : ""));
   }
   if (!idx.length) {
     const b = (s.meta && s.meta.benchmarks) || {};
-    for (const k of Object.keys(b)) if (b[k]) L.push(k + ": " + ar(b[k].value) + " (" + pct(b[k].change) + ")");
-    L.push("(أرقام المؤشرات من لقطة " + ((s.meta && s.meta.session_date) || "") + " — لا توجد بيانات لحظية)");
+    for (const k of Object.keys(b)) if (b[k]) L.push(k + ": " + nf(b[k].value).toLocaleString("en-US") + " (" + pct(b[k].change) + ")");
+    L.push("⛔ مفيش أرقام مباشرة — الأرقام من لقطة " + ((s.meta && s.meta.session_date) || "") + " (قديمة)");
   }
   const g = (live && live.gold) || s.meta.gold || {};
-  if (g.gram_egp) L.push("الذهب: " + money(g.gram_egp) + " ج.م/جرام · الدولار: " + nf(g.egp_per_usd).toFixed(2));
+  if (g.gram_egp) L.push("🥇 الذهب: " + money(g.gram_egp) + " ج.م/جرام · الدولار: " + nf(g.egp_per_usd).toFixed(2));
   return L.join("\n");
 }
 async function replyStock(code) {

@@ -24,57 +24,64 @@ function cairoDate(d) {
 
 function buildReport(state, tasks, port, meta, live, dec) {
   const L = [];
-  L.push("تقرير EZZ اليومي — " + cairoDate(new Date()));
-  L.push("");
-
-  // ١) المحفظة
   const capital = nf(port && port.capital, 100000);
   const cash = nf(port && port.cash, capital);
   const nPos = Object.keys((port && port.positions) || {}).length;
-  L.push("المحفظة");
-  L.push("رأس المال " + money(capital) + " ج.م · كاش " + money(cash) + " ج.م");
-  L.push(nPos ? "مراكز مفتوحة: " + nPos : "مفيش مراكز — كاش ١٠٠٪");
-  if (dec && Array.isArray(dec.orders) && dec.orders.length) {
-    L.push("أوامر مستنية تنفيذك: " + dec.orders.length + " · " + nf(dec.total).toLocaleString("en-US") + " ج.م");
-    for (const o of dec.orders) {
-      let line = "· " + o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2);
+  const orders = (dec && Array.isArray(dec.orders)) ? dec.orders : [];
+
+  L.push("📊 تقرير EZZ اليومي");
+  L.push("🗓 " + cairoDate(new Date()) + " — القاهرة");
+  L.push("");
+  L.push("💰 المحفظة");
+  L.push("رأس المال: " + money(capital) + " ج.م");
+  L.push("كاش: " + money(cash) + " ج.م");
+  L.push("مراكز مفتوحة: " + nPos);
+  if (!nPos) L.push("⇐ كاش 100% (مفيش أوامر منفَّذة)");
+
+  if (orders.length) {
+    L.push("");
+    L.push("📝 أوامر مستنية تنفيذك (" + orders.length + ") — " + money(dec.total) + " ج.م");
+    L.push("");
+    for (const o of orders) {
+      L.push("• " + (o.name || o.code) + " (" + o.code + ") — " + nf(o.qty) + " سهم");
+      L.push("سعر التوصية: " + nf(o.price).toFixed(2));
       const p = (live && live.prices) ? live.prices[o.code] : null;
       if (p && typeof p.price === "number") {
         const pl = p.price - nf(o.price), pc = pl / nf(o.price) * 100;
-        line += " · الآن " + p.price.toFixed(2) + " (" + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "% · " + money(pl * nf(o.qty)) + " ج.م)";
+        L.push("السعر الآن: " + p.price.toFixed(2));
+        L.push("التغيّر: " + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "%");
+        L.push((pl >= 0 ? "الربح: " : "الخسارة: ") + money(Math.abs(pl * nf(o.qty))) + " ج.م");
       }
-      L.push(line);
+      L.push("سعر الوقف: " + nf(o.stop).toFixed(2));
+      L.push("");
     }
     if (live && live.pl !== null && live.pl !== undefined) {
-      L.push("لو نُفِّذت بسعر التوصية: " + nf(live.now).toLocaleString("en-US") + " ج.م ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(dec.total) * 100).toFixed(2) + "%)");
+      L.push("💡 لو نُفِّذت الأوامر بسعر التوصية:");
+      L.push("القيمة الآن: " + money(live.now) + " ج.م");
+      L.push("مقابل التوصية: " + money(dec.total) + " ج.م");
+      L.push("⇐ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(dec.total) * 100).toFixed(2) + "%)");
     }
     L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر");
   }
-  L.push("");
 
-  // ٢) السوق
-  L.push("السوق");
+  L.push("");
   const liveIdx = (live && live.idx && live.idx.indices) || [];
   const ms = (live && live.idx && live.idx.market_status) || null;
+  L.push("📈 السوق" + (liveIdx.length ? " (آخر جلسة · مباشرة من محرك OCTA)" : ""));
   if (ms) L.push("الحالة: " + (ms.status_ar || ms.status || "") + " · " + String(ms.as_of || "").slice(11, 16) + " UTC");
-  if (liveIdx.length) {
-    for (const it of liveIdx) {
-      const v = dig(it, ["value", "last", "price", "close"]), c = dig(it, ["change", "change_pct", "percent", "day_change"]);
-      if (v !== null) L.push(it.id + ": " + nf(v).toLocaleString("en-US") + (c !== null ? " (" + pct(c) + ")" : "") + (it.short_ar ? " · " + it.short_ar : ""));
-    }
-    L.push("(أرقام آخر جلسة · مباشرة من محرك OCTA)");
-  } else {
+  for (const it of liveIdx) {
+    const v = dig(it, ["value", "last", "price", "close"]), c = dig(it, ["change", "change_pct", "percent", "day_change"]);
+    if (v !== null) L.push((it.short_ar || it.id) + " (" + it.id + "): " + nf(v).toLocaleString("en-US") + (c !== null ? " (" + pct(c) + ")" : ""));
+  }
+  if (!liveIdx.length) {
     const b = (meta && meta.benchmarks) || {};
-    for (const k of ["EGX30", "EGX70", "EGX100", "EGX33"]) {
-      if (b[k]) L.push(k + ": " + nf(b[k].value).toLocaleString("en-US") + " (" + pct(b[k].change) + " · شهر " + pct(b[k].perf_1m) + ")");
-    }
-    L.push("⛔ مفيش أرقام مباشرة — دول من لقطة " + ((meta && meta.session_date) || "") + " (قديمة)");
+    for (const k of ["EGX30", "EGX70", "EGX100", "EGX33"]) if (b[k]) L.push(k + ": " + nf(b[k].value).toLocaleString("en-US") + " (" + pct(b[k].change) + ")");
+    L.push("⛔ مفيش أرقام مباشرة — الأرقام من لقطة " + ((meta && meta.session_date) || "") + " (قديمة)");
   }
   const g = (live && live.gold) || (meta && meta.gold) || {};
-  if (g.gram_egp) L.push("الذهب: " + money(g.gram_egp) + " ج.م/جرام · الدولار " + nf(g.egp_per_usd).toFixed(2));
+  if (g.gram_egp) L.push("🥇 الذهب: " + money(g.gram_egp) + " ج.م/جرام · الدولار: " + nf(g.egp_per_usd).toFixed(2));
   L.push("");
 
-  // ٣) القرارات والمهام المفتوحة
   const open = [];
   const seen = new Set();
   const all = []
@@ -89,23 +96,21 @@ function buildReport(state, tasks, port, meta, live, dec) {
   }
   const active = open.filter((t) => t.status !== "paused");
   const paused = open.filter((t) => t.status === "paused");
-  L.push("محتاج قرارك (" + active.length + ")");
+  L.push("⚠️ محتاج قرارك (" + active.length + ")");
   if (!active.length) L.push("مفيش قرار معلّق.");
   for (const t of active.slice(0, 8)) {
-    const title = (t.title || "").length > 62 ? t.title.slice(0, 62) + "…" : (t.title || "");
-    L.push(t.id + " · " + t.prio + " · " + t.status + " — " + title);
+    L.push("• " + t.id + " · " + (t.prio || "") + " · " + t.status);
+    const title = (t.title || "").length > 60 ? t.title.slice(0, 60) + "…" : (t.title || "");
+    if (title) L.push(title);
   }
   if (paused.length) L.push("متوقف: " + paused.map((t) => t.id).join(" · "));
   L.push("");
 
-  // ٤) بوت الذهب + التوكنز
   const gb = (state && state.gold_bot) || {};
-  L.push("الأنظمة");
-  L.push("بوت الذهب: " + (gb.engine_alive === false ? "مش شغّال" : "شغّال") + " · " + (gb.schedule || "لا توجد بيانات"));
+  L.push("🤖 الأنظمة");
+  L.push("بوت الذهب: " + (gb.engine_alive === false ? "مش شغّال" : "شغّال") + (gb.schedule ? " · " + gb.schedule : ""));
   const tb = (state && state.token_budget) || {};
-  if (tb.cost_per_run) {
-    L.push("التوكنز: " + nf(tb.cost_per_day).toLocaleString("en-US") + " /يوم (" + nf(tb.runs_per_day) + " تشغيل · سقف " + nf(tb.cap_runs_per_day) + ")");
-  }
+  if (tb.cost_per_run) L.push("التوكنز: " + nf(tb.cost_per_day).toLocaleString("en-US") + " /يوم · " + nf(tb.runs_per_day) + " تشغيل · سقف " + nf(tb.cap_runs_per_day));
   const cd = (state && state.content_direction) || {};
   if (cd.status) L.push("المحتوى: " + cd.status);
   L.push("");
