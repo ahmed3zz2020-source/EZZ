@@ -49,27 +49,40 @@ async function snapshot(env) {
     cleanup: state.chat_cleanup || {},
     lastUpdate: port.last_update || meta.session_date || "" };
 }
-function replyPortfolio(s) {
+function replyPortfolio(s, live) {
   const nPos = Object.keys(s.positions).length;
   const invested = s.capital - s.cash;
   const L = ["حالة عز استثمار — " + new Date().toISOString().slice(0, 10)];
-  L.push("رأس المال: " + money(s.capital) + " ج.م · كاش: " + money(s.cash) + " ج.م");
+  L.push("رأس المال: " + money(s.capital) + " ج.م · كاش: " + money(s.cash));
   L.push(nPos ? ("مراكز مفتوحة: " + nPos + " · مستثمر: " + money(invested) + " ج.م") : "مفيش مراكز مفتوحة — المحفظة كاش ١٠٠٪");
   const d = s.decisions;
   if (d && Array.isArray(d.orders) && d.orders.length) {
     L.push("أوامر مستنية تنفيذك: " + d.orders.length + " · إجمالي " + money(d.total) + " ج.م");
-    L.push("الكاش بعد التنفيذ: " + money(d.cash_after) + " ج.م · مخاطرة ≈ " + nf(d.risk_pct).toFixed(1) + "%");
+    if (live && live.pl !== null && live.pl !== undefined) {
+      L.push("لو نُفِّذت بسعر التوصية: " + money(live.now) + " ج.م ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
+    }
   } else L.push("مفيش أوامر مسجّلة في الداتا.");
   L.push("⛔ التوصية مش أمر — التنفيذ بيدك في ثاندر.");
   if (s.lastUpdate) L.push("آخر تحديث الداتا: " + String(s.lastUpdate).slice(0, 10));
   return L.join("\n");
 }
-function replyOrders(s) {
+function replyOrders(s, live) {
   const d = s.decisions;
-  if (!d || !Array.isArray(d.orders) || !d.orders.length) return "مفيش أوامر مسجّلة في الداتا — قولّي计划和خطّطها لك أول مرة.";
+  if (!d || !Array.isArray(d.orders) || !d.orders.length) return "مفيش أوامر مسجّلة في الداتا — قولّي خططها لك أول مرة.";
   const L = ["أوامر المحفظة المتسجّلة (" + (d.date || "") + ") — " + d.orders.length + " أوامر"];
-  for (const o of d.orders) L.push(o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2) + " (وقف " + nf(o.stop).toFixed(2) + ")");
+  for (const o of d.orders) {
+    let line = o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2) + " (وقف " + nf(o.stop).toFixed(2) + ")";
+    const p = live && live.prices ? live.prices[o.code] : null;
+    if (p && typeof p.price === "number") {
+      const pl = p.price - nf(o.price), pc = pl / nf(o.price) * 100;
+      line += " · الآن " + p.price.toFixed(2) + " (" + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "% · " + money(pl * nf(o.qty)) + " ج.م)";
+    }
+    L.push(line);
+  }
   L.push("الإجمالي: " + money(d.total) + " ج.م · الكاش بعد التنفيذ: " + money(d.cash_after) + " ج.م");
+  if (live && live.pl !== null && live.pl !== undefined && live.pl !== undefined) {
+    L.push("لو نُفِّذت الأوامر بسعر التوصية: " + money(live.now) + " ج.م بدل " + money(d.total) + " ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
+  }
   L.push("الحالة: " + (d.status || "") + " · " + (d.rule || ""));
   L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر.");
   return L.join("\n");
@@ -218,11 +231,21 @@ async function answer(env, text) {
       return { kind: "report", text: ok ? "اتبعت تقرير النهاردة ✅ (رسالة " + nf(j.sent.message_id) + ")" : "مقدرتش أبعته دلوقتي — في خطأ في الإرسال." };
     } catch (e) { return { kind: "report", text: "مقدرتش أبعت التقرير دلوقتي: " + String((e && e.message) || e) }; }
   }
-  const needLive = c.k === "market" || c.k === "gold" || c.k === "status";
-  const live = needLive ? await (async () => { const [idx, gold] = await Promise.all([getJSON(OCTA + "/api/indices"), getJSON(OCTA + "/api/gold")]); return { idx, gold }; })() : null;
   const s = await snapshot(env);
-  if (c.k === "portfolio") return { kind: c.k, text: replyPortfolio(s) };
-  if (c.k === "orders") return { kind: c.k, text: replyOrders(s) };
+  const needLive = c.k === "market" || c.k === "gold" || c.k === "status";
+  let live = null;
+  if (needLive) {
+    const [idx, gold] = await Promise.all([getJSON(OCTA + "/api/indices"), getJSON(OCTA + "/api/gold")]);
+    live = { idx, gold };
+  }
+  const orders = (s.decisions && Array.isArray(s.decisions.orders)) ? s.decisions.orders : [];
+  if (orders.length && (c.k === "orders" || c.k === "portfolio" || c.k === "status")) {
+    const pb = await priceBlock(orders);
+    live = live || {};
+    live.prices = pb.prices; live.now = pb.now; live.pl = pb.pl;
+  }
+  if (c.k === "portfolio") return { kind: c.k, text: replyPortfolio(s, live) };
+  if (c.k === "orders") return { kind: c.k, text: replyOrders(s, live) };
   if (c.k === "tasks") return { kind: c.k, text: replyTasks(s) };
   if (c.k === "decisions") return { kind: c.k, text: replyDecisions(s) };
   if (c.k === "budget") return { kind: c.k, text: replyBudget(s) };
@@ -230,7 +253,7 @@ async function answer(env, text) {
   if (c.k === "cleanup") return { kind: c.k, text: replyCleanup(s) };
   if (c.k === "market") return { kind: c.k, text: replyMarket(s, live) };
   if (c.k === "gold") return { kind: c.k, text: replyGold(s, live) };
-  if (c.k === "status") return { kind: c.k, text: replyPortfolio(s) + "\n\n" + replyMarket(s, live) + "\n\n" + replyGold(s, live) };
+  if (c.k === "status") return { kind: c.k, text: replyPortfolio(s, live) + "\n\n" + replyMarket(s, live) + "\n\n" + replyGold(s, live) };
   return { kind: null, text: replyFallback(text) };
 }
 async function sendTelegram(env, chat, text) {
@@ -292,3 +315,24 @@ export default {
     return new Response("ok " + (entry.auto || (entry.needs_llm ? "needs_llm" : "stored")));
   },
 };
+
+async function livePrices(codes) {
+  const out = {};
+  await Promise.all((codes || []).map(async (c) => {
+    const d = await getJSON(OCTA + "/api/explain/" + encodeURIComponent(c));
+    if (d && typeof d.price === "number") out[c] = { price: d.price, score: (d.explanation || {}).base_score };
+  }));
+  return out;
+}
+async function priceBlock(orders) {
+  const prices = await livePrices((orders || []).map((o) => o.code));
+  let now = 0, pl = 0, have = false;
+  for (const o of orders || []) {
+    const p = prices[o.code];
+    if (!p) continue;
+    have = true;
+    now += p.price * nf(o.qty);
+    pl += (p.price - nf(o.price)) * nf(o.qty);
+  }
+  return { prices, now: have ? now : null, pl: have ? pl : null };
+}

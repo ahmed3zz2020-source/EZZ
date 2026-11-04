@@ -36,7 +36,18 @@ function buildReport(state, tasks, port, meta, live, dec) {
   L.push(nPos ? "مراكز مفتوحة: " + nPos : "مفيش مراكز — كاش ١٠٠٪");
   if (dec && Array.isArray(dec.orders) && dec.orders.length) {
     L.push("أوامر مستنية تنفيذك: " + dec.orders.length + " · " + nf(dec.total).toLocaleString("en-US") + " ج.م");
-    for (const o of dec.orders) L.push("· " + o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2));
+    for (const o of dec.orders) {
+      let line = "· " + o.code + " " + (o.name || "") + " — " + nf(o.qty) + " @ " + nf(o.price).toFixed(2);
+      const p = (live && live.prices) ? live.prices[o.code] : null;
+      if (p && typeof p.price === "number") {
+        const pl = p.price - nf(o.price), pc = pl / nf(o.price) * 100;
+        line += " · الآن " + p.price.toFixed(2) + " (" + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "% · " + money(pl * nf(o.qty)) + " ج.م)";
+      }
+      L.push(line);
+    }
+    if (live && live.pl !== null && live.pl !== undefined) {
+      L.push("لو نُفِّذت بسعر التوصية: " + nf(live.now).toLocaleString("en-US") + " ج.م ⇒ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(dec.total) * 100).toFixed(2) + "%)");
+    }
     L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر");
   }
   L.push("");
@@ -125,14 +136,14 @@ export default {
   async fetch(e, env, ctx) {
     const url = new URL(e.url);
     const run = async (doSend) => {
-      const [state, tasks, port, meta, dec, live] = await Promise.all([
+      const [state, tasks, port, meta, dec] = await Promise.all([
         kvGet(env.M, "core/state.json"),
         kvGet(env.M, "core/tasks.json"),
         kvGet(env.P, "portfolio/ezz-investment"),
         kvGet(env.P, "portfolio/meta"),
         kvGet(env.P, "portfolio/decisions.json"),
-        liveMarket(),
       ]);
+      const live = await liveMarketAndPrices(dec);
       const text = buildReport(state, tasks, port, meta, live, dec);
       let sent = { ok: false, error: "dry-run" };
       if (doSend) sent = await sendTelegram(env, text);
@@ -154,14 +165,14 @@ export default {
   },
 
   async scheduled(e, env, ctx) {
-    const [state, tasks, port, meta, dec, live] = await Promise.all([
+    const [state, tasks, port, meta, dec] = await Promise.all([
       kvGet(env.M, "core/state.json"),
       kvGet(env.M, "core/tasks.json"),
       kvGet(env.P, "portfolio/ezz-investment"),
       kvGet(env.P, "portfolio/meta"),
       kvGet(env.P, "portfolio/decisions.json"),
-      liveMarket(),
     ]);
+    const live = await liveMarketAndPrices(dec);
     const text = buildReport(state, tasks, port, meta, live, dec);
     const sent = await sendTelegram(env, text);
     return { ok: sent.ok, message_id: sent.message_id, error: sent.error };
@@ -184,4 +195,34 @@ function dig(obj, keys, depth) {
   for (const k of keys) if (typeof obj[k] === "number" && isFinite(obj[k])) return obj[k];
   for (const v of Object.values(obj)) { const r = dig(v, keys, depth + 1); if (r !== null) return r; }
   return null;
+}
+
+async function livePrices(codes) {
+  const out = {};
+  await Promise.all((codes || []).map(async (c) => {
+    try {
+      const r = await fetch("https://octa-prices-production-4ccb.up.railway.app/api/explain/" + encodeURIComponent(c), { headers: { "User-Agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(9000) });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d && typeof d.price === "number") out[c] = { price: d.price, score: (d.explanation || {}).base_score };
+    } catch {}
+  }));
+  return out;
+}
+async function liveMarketAndPrices(dec) {
+  const m = await liveMarket();
+  const orders = (dec && Array.isArray(dec.orders)) ? dec.orders : [];
+  if (orders.length) {
+    const prices = await livePrices(orders.map((o) => o.code));
+    let now = 0, pl = 0, have = false;
+    for (const o of orders) {
+      const p = prices[o.code];
+      if (!p) continue;
+      have = true;
+      now += p.price * nf(o.qty);
+      pl += (p.price - nf(o.price)) * nf(o.qty);
+    }
+    m.prices = prices; m.now = have ? now : null; m.pl = have ? pl : null;
+  }
+  return m;
 }
