@@ -26,8 +26,11 @@ function buildReport(state, tasks, port, meta, live, dec) {
   const L = [];
   const capital = nf(port && port.capital, 100000);
   const cash = nf(port && port.cash, capital);
-  const nPos = Object.keys((port && port.positions) || {}).length;
+  const positions = (port && port.positions) || {};
+  const nPos = Object.keys(positions).length;
   const orders = (dec && Array.isArray(dec.orders)) ? dec.orders : [];
+  // ⭐ حالة القرار: اتنفّذ (بتأكيد المالك) ولا لسه مستني تنفيذ
+  const executed = !!(dec && dec.status === "executed");
 
   L.push("📊 تقرير EZZ اليومي");
   L.push("🗓 " + cairoDate(new Date()) + " — القاهرة");
@@ -38,7 +41,41 @@ function buildReport(state, tasks, port, meta, live, dec) {
   L.push("مراكز مفتوحة: " + nPos);
   if (!nPos) L.push("⇐ كاش 100% (مفيش أوامر منفَّذة)");
 
-  if (orders.length) {
+  if (executed && nPos) {
+    // ✅ المراكز منفَّذة ⇒ عرض المراكز الحقيقية + الربح/الخسارة مقابل سعر الدخول
+    L.push("");
+    L.push("📊 مراكزك المنفَّذة (" + nPos + ")");
+    L.push("");
+    let unreal = 0, mv = 0;
+    for (const o of orders) {
+      const pos = positions[o.code];
+      const qty = pos ? nf(pos.qty, nf(o.qty)) : nf(o.qty);
+      const entry = pos ? nf(pos.avg_price, nf(o.price)) : nf(o.price);
+      const stop = pos && pos.stop ? nf(pos.stop) : nf(o.stop);
+      L.push("• " + (o.name || o.code) + " (" + o.code + ") — " + qty + " سهم");
+      L.push("سعر الدخول: " + entry.toFixed(2));
+      const p = (live && live.prices) ? live.prices[o.code] : null;
+      if (p && typeof p.price === "number") {
+        const pl = (p.price - entry) * qty, pc = (p.price - entry) / entry * 100;
+        unreal += pl; mv += p.price * qty;
+        L.push("السعر الآن: " + p.price.toFixed(2));
+        L.push("التغيّر: " + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "%");
+        L.push((pl >= 0 ? "الربح: " : "الخسارة: ") + money(Math.abs(pl)) + " ج.م");
+        if (stop && p.price <= stop) L.push("🔴 تحت وقف الخسارة (" + stop.toFixed(2) + ") — القرار في إيدك");
+      }
+      L.push("سعر الوقف: " + stop.toFixed(2));
+      L.push("");
+    }
+    if (live && live.prices) {
+      const eq = cash + mv;
+      L.push("💡 قيمة المراكز الآن: " + money(mv) + " ج.م");
+      L.push("إجمالي المحفظة (كاش + مراكز): " + money(eq) + " ج.م");
+      L.push("الربح/الخسارة غير المحققة: " + (unreal >= 0 ? "ربح " : "خسارة ") + money(Math.abs(unreal))
+        + " ج.م (" + (unreal / capital * 100).toFixed(2) + "% من رأس المال)");
+    }
+    L.push("⛔ البيع يدوي في ثاندر — عز استثمار بيحلل ويبلّغ، ما بياخدش قرار بيع لوحده.");
+  } else if (orders.length) {
+
     L.push("");
     L.push("📝 أوامر مستنية تنفيذك (" + orders.length + ") — " + money(dec.total) + " ج.م");
     L.push("");

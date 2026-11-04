@@ -58,7 +58,15 @@ function replyPortfolio(s, live) {
   L.push("مراكز مفتوحة: " + nPos);
   if (!nPos) L.push("⇐ كاش 100% (مفيش أوامر منفَّذة)");
   const d = s.decisions;
-  if (d && Array.isArray(d.orders) && d.orders.length) {
+  const executed = !!(d && d.status === "executed");
+  if (executed && nPos) {
+    L.push("");
+    L.push("📊 مراكزك المنفَّذة (" + nPos + ")");
+    if (live && live.pl !== null && live.pl !== undefined) {
+      L.push("💡 الربح/الخسارة الآن: " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
+    }
+    L.push("⛔ البيع يدوي في ثاندر — أنا بيحلل وببلّغ بس.");
+  } else if (d && Array.isArray(d.orders) && d.orders.length) {
     L.push("");
     L.push("📝 أوامر مستنية تنفيذك (" + d.orders.length + ") — " + money(d.total) + " ج.م");
     if (live && live.pl !== null && live.pl !== undefined) {
@@ -68,7 +76,7 @@ function replyPortfolio(s, live) {
     L.push("");
     L.push("📝 مفيش أوامر مسجّلة في الداتا.");
   }
-  L.push("⛔ التوصية مش أمر — التنفيذ بيدك في ثاندر.");
+  if (!executed) L.push("⛔ التوصية مش أمر — التنفيذ بيدك في ثاندر.");
   if (s.lastUpdate) L.push("آخر تحديث الداتا: " + String(s.lastUpdate).slice(0, 10));
   return L.join("\n");
 }
@@ -76,29 +84,35 @@ function replyOrders(s, live) {
   const d = s.decisions;
   if (!d || !Array.isArray(d.orders) || !d.orders.length) return "📝 مفيش أوامر مسجّلة في الداتا — قولّي خططها لك أول مرة.";
   const L = [];
-  L.push("📝 أوامر مستنية تنفيذك (" + d.orders.length + ")");
+  const executed = !!(d.status === "executed");
+  if (executed) L.push("📊 مراكزك المنفَّذة (" + d.orders.length + ") — " + money(d.total) + " ج.م");
+  else L.push("📝 أوامر مستنية تنفيذك (" + d.orders.length + ")");
   L.push("التاريخ: " + (d.date || "") + " · الإجمالي: " + money(d.total) + " ج.م");
   L.push("");
   for (const o of d.orders) {
-    L.push("• " + (o.name || o.code) + " (" + o.code + ") — " + nf(o.qty) + " سهم");
-    L.push("سعر التوصية: " + nf(o.price).toFixed(2));
+    const pos = s.positions[o.code];
+    const qty = pos ? nf(pos.qty, nf(o.qty)) : nf(o.qty);
+    const entry = pos ? nf(pos.avg_price, nf(o.price)) : nf(o.price);
+    L.push("• " + (o.name || o.code) + " (" + o.code + ") — " + qty + " سهم");
+    L.push(executed ? "سعر الدخول: " + entry.toFixed(2) : "سعر التوصية: " + entry.toFixed(2));
     const p = live && live.prices ? live.prices[o.code] : null;
     if (p && typeof p.price === "number") {
-      const pl = p.price - nf(o.price), pc = pl / nf(o.price) * 100;
+      const pl = p.price - entry, pc = pl / entry * 100;
       L.push("السعر الآن: " + p.price.toFixed(2));
       L.push("التغيّر: " + (pc >= 0 ? "+" : "") + pc.toFixed(2) + "%");
-      L.push((pl >= 0 ? "الربح: " : "الخسارة: ") + money(Math.abs(pl * nf(o.qty))) + " ج.м");
+      L.push((pl >= 0 ? "الربح: " : "الخسارة: ") + money(Math.abs(pl * qty)) + " ج.م");
     }
-    L.push("سعر الوقف: " + nf(o.stop).toFixed(2));
+    const stp = pos && pos.stop ? nf(pos.stop) : nf(o.stop);
+    L.push("سعر الوقف: " + stp.toFixed(2));
     L.push("");
   }
-  if (live && live.pl !== null && live.pl !== undefined) {
+  if (!executed && live && live.pl !== null && live.pl !== undefined) {
     L.push("💡 لو نُفِّذت الأوامر بسعر التوصية:");
     L.push("القيمة الآن: " + money(live.now) + " ج.م");
     L.push("مقابل التوصية: " + money(d.total) + " ج.م");
     L.push("⇐ " + (live.pl >= 0 ? "ربح " : "خسارة ") + money(Math.abs(live.pl)) + " ج.م (" + (live.pl / nf(d.total) * 100).toFixed(2) + "%)");
   }
-  L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر.");
+  if (!executed) L.push("⛔ القرار في إيدك — التنفيذ يدوي في ثاندر.");
   return L.join("\n");
 }
 function replyTasks(s) {
