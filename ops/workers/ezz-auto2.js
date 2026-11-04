@@ -223,6 +223,7 @@ function classify(t) {
   const raw = (t || "").trim();
   if (!raw) return null;
   const s = norm(raw);
+  if (/نفذ|نفذت|تم تنفيذ|تم شراء|شريت كل|بعت كل/.test(s) || /اشتريت.*(الاسهم|الأسهم|كله|الكل)/.test(s)) return { k: "executed" };
   const tid = raw.match(/\bT-\d{2,4}\b/i);
   if (tid) return { k: "taskid", id: tid[0].toUpperCase() };
   const code = raw.match(/\b([A-Z]{3,5})\b/);
@@ -236,7 +237,7 @@ function classify(t) {
     else if (n === bestN && n > 0) tie = true;
   }
   if (!best) return null;
-  if (tie) return { k: "ambiguous" };
+  if (tie) { if (/شراء|شتري|بيع|نبيع|صفقه|توصي|امر/.test(s)) return { k: "orders" }; return { k: "ambiguous" }; }
   return { k: best };
 }
 async function answer(env, text) {
@@ -247,6 +248,7 @@ async function answer(env, text) {
   }
   if (!c) return { kind: null, text: replyFallback(text) };
   if (c.k === "help") return { kind: "help", text: replyHelp() };
+  if (c.k === "executed") return { kind: "executed", text: ["✅ تمام — قلتلي إنك نفّذت.", "عشان أسجّل الأوامر صح في دفتر المحفظة، ابعتلي لكل سهم سعر التنفيذ والكمية.", "مثال: ABUK 220 عند 77.50", "وأنا بعدها أحسب لك الربح/الخسارة من سعرك الحقيقي مش من سعر التوصية.", "⛔ التنفيذ يدوي في ثاندر — أنا بسجّل."].join("\n") };
   if (c.k === "stock") return { kind: "stock", text: await replyStock(c.code) };
   if (c.k === "taskid") {
     const s0 = await snapshot(env);
