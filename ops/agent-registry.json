@@ -203,7 +203,11 @@
     "cairo": "07:00 كل يوم",
     "send_path": "Worker scheduled handler ⇒ sendTelegram (service binding SEND) ⇒ @EzzDeskBot · chat 2073907990",
     "proof": "تقرير ٣ نوفمبر اتبعت يدوي (message_id 50) · والجدولة اتقفلت بـ200 من الـAPI",
-    "stop": "احذف الجدولة: PUT /workers/scripts/ezz-daily/schedules بـ[] (المصفوفة لازم)"
+    "stop": "احذف الجدولة: PUT /workers/scripts/ezz-daily/schedules بـ[] (المصفوفة لازم)",
+    "live_market": true,
+    "fixed": "2026-11-04 — التقرير كان بيقرأ المؤشرات والذهب من لقطة KV قديمة (٢٩–٣١ أكتوبر) ⇒ أرقام مغلوطة. اتصلّح: التقرير بيجيب الأرقام اللحظية (آخر جلسة) مباشرة من محرك OCTA وقت التشغيل، ولو فشل الجلب بيكتب «⛔ مفيش أرقام مباشرة — دول من لقطة {date} (قديمة)».",
+    "orders_section": "التقرير بقى يعرض أوامر ٣١ أكتوبر من portfolio/decisions.json + «القرار في إيدك».",
+    "sources": "ops/workers/ezz-daily.js · ops/workers/ezz-auto2.js (نسخة دائمة في الريبو)"
   },
   "telegram_bot_v2": {
     "date": "2026-11-03",
@@ -236,6 +240,7 @@
       "المجهول ⇒ رد فوري بقائمة اختيارات + تسجيل في core/inbox",
       "صفر توكن (كود فقط)"
     ],
-    "notes": "المؤشرات والأرقام اللحظية من OCTA API · أوامر ٣١ أكتوبر مسجّلة في portfolio/decisions.json · التوكن بصفر"
+    "notes": "المؤشرات والأرقام اللحظية من OCTA API · أوامر ٣١ أكتوبر مسجّلة في portfolio/decisions.json · التوكن بصفر",
+    "daily_report": "ezz-daily (٢٠٢٦-١١-٠٤) · ٠٥:٠٠ UTC = ٠٧:٠٠ القاهرة · أرقام لحظية + الأوامر المستنية"
   }
 }
